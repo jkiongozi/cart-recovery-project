@@ -4,3 +4,8 @@ timestamp,cart_id,recommended_action,reason,confidence,expected_profit,status
 2026-11-06T02:59:52.956932+00:00,UA-16971,Reminder email,Judgment call due to high cart value and unknown purchase rates.,Low,,Requires Human Approval
 2026-11-06T02:59:52.958405+00:00,UA-27286,Reminder email,Low-cost option that may yield high profit given the situation.,Low,,Requires Human Approval
 2026-11-06T02:59:52.964853+00:00,UA-22067,Reminder email,This option is cost-effective and could lead to recovery despite unknown purchase rate.,Low,,Requires Human Approval
+2026-11-10T22:20:56.399751+00:00,UA-33574,Reminder email,Sending a reminder has no cost and maintains the possibility of recovery; the expected profit is unknown.,Low,,Requires Human Approval
+2026-11-10T22:20:56.403029+00:00,UA-33575,Reminder email,A reminder increases chances of recovery without cost; expected profit is unknown.,Low,,Requires Human Approval
+2026-11-10T22:20:56.407702+00:00,UA-33576,5% discount,The discount could provide an incentive for a returning customer; expected profit is unknown but should be checked if item is not on sale.,Low,,Requires Human Approval
+2026-11-10T22:20:56.412927+00:00,UA-33577,Reminder email,Reminder has no cost and could enhance recovery chances; expected profit is unknown.,Low,,Requires Human Approval
+2026-11-10T22:20:56.416871+00:00,UA-33579,Reminder email,A reminder is the best cost-free option to attempt recovery; expected profit is unknown.,Low,,Requires Human Approval
