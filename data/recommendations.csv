@@ -1,0 +1,6 @@
+timestamp,cart_id,recommended_action,reason,confidence,expected_profit,status
+2026-11-06T02:59:52.952809+00:00,UA-09912,Reminder email,Profitable option given no actions are allowed and full margin if cart is recovered.,Low,,Requires Human Approval
+2026-11-06T02:59:52.955001+00:00,UA-15598,Reminder email,"Best option despite unknown purchase rate, as this action has no cost.",Low,,Requires Human Approval
+2026-11-06T02:59:52.956932+00:00,UA-16971,Reminder email,Judgment call due to high cart value and unknown purchase rates.,Low,,Requires Human Approval
+2026-11-06T02:59:52.958405+00:00,UA-27286,Reminder email,Low-cost option that may yield high profit given the situation.,Low,,Requires Human Approval
+2026-11-06T02:59:52.964853+00:00,UA-22067,Reminder email,This option is cost-effective and could lead to recovery despite unknown purchase rate.,Low,,Requires Human Approval

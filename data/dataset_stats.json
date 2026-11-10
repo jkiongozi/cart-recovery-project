@@ -1,0 +1,569 @@
+{
+  "2016-17": {
+    "period": "Aug 2016 - Aug 2017",
+    "first_day": "2016-08-01",
+    "last_day": "2017-08-01",
+    "cart_sessions": 33706,
+    "purchased_sessions": 9615,
+    "abandoned_sessions": 24091,
+    "abandonment_rate_pct": 71.5,
+    "reached_checkout_pct": 43.9,
+    "left_at_checkout_pct_of_checkouts": 35.0,
+    "abandonment_rate_pct_by_device": {
+      "desktop": 68.8,
+      "mobile": 85.8,
+      "tablet": 82.7
+    },
+    "cart_sessions_by_device": {
+      "desktop": 28220,
+      "mobile": 4748,
+      "tablet": 738
+    },
+    "came_back_and_bought_within_7_days": {
+      "carts_with_full_window": 23523,
+      "came_back": 2506,
+      "rate_pct": 10.7
+    },
+    "came_back_and_bought_within_30_days": {
+      "carts_with_full_window": 21944,
+      "came_back": 3000,
+      "rate_pct": 13.7
+    },
+    "cart_values_are_reliable_dollars": true,
+    "median_abandoned_cart": 24.99,
+    "total_abandoned_value": 1225133.74,
+    "patterns": {
+      "device": {
+        "desktop": {
+          "sessions": 28220,
+          "abandoned": 19405,
+          "abandonment_rate_pct": 68.8,
+          "points_vs_overall": -2.7,
+          "reached_checkout_pct": 46.9,
+          "left_at_checkout_pct_of_checkouts": 33.5,
+          "abandoned_value": 1024604.18
+        },
+        "mobile": {
+          "sessions": 4748,
+          "abandoned": 4076,
+          "abandonment_rate_pct": 85.8,
+          "points_vs_overall": 14.4,
+          "reached_checkout_pct": 28.5,
+          "left_at_checkout_pct_of_checkouts": 50.3,
+          "abandoned_value": 171885.43
+        },
+        "tablet": {
+          "sessions": 738,
+          "abandoned": 610,
+          "abandonment_rate_pct": 82.7,
+          "points_vs_overall": 11.2,
+          "reached_checkout_pct": 27.4,
+          "left_at_checkout_pct_of_checkouts": 36.6,
+          "abandoned_value": 28644.13
+        }
+      },
+      "traffic_medium": {
+        "(none)": {
+          "sessions": 22867,
+          "abandoned": 15533,
+          "abandonment_rate_pct": 67.9,
+          "points_vs_overall": -3.5,
+          "reached_checkout_pct": 48.4,
+          "left_at_checkout_pct_of_checkouts": 33.7,
+          "abandoned_value": 827897.87
+        },
+        "affiliate": {
+          "sessions": 119,
+          "abandoned": 110,
+          "abandonment_rate_pct": 92.4,
+          "points_vs_overall": 21.0,
+          "reached_checkout_pct": 23.5,
+          "left_at_checkout_pct_of_checkouts": 67.9,
+          "abandoned_value": 5064.2
+        },
+        "cpc": {
+          "sessions": 989,
+          "abandoned": 781,
+          "abandonment_rate_pct": 79.0,
+          "points_vs_overall": 7.5,
+          "reached_checkout_pct": 34.0,
+          "left_at_checkout_pct_of_checkouts": 38.1,
+          "abandoned_value": 40807.58
+        },
+        "cpm": {
+          "sessions": 515,
+          "abandoned": 388,
+          "abandonment_rate_pct": 75.3,
+          "points_vs_overall": 3.9,
+          "reached_checkout_pct": 38.1,
+          "left_at_checkout_pct_of_checkouts": 35.2,
+          "abandoned_value": 20777.66
+        },
+        "organic": {
+          "sessions": 7914,
+          "abandoned": 6211,
+          "abandonment_rate_pct": 78.5,
+          "points_vs_overall": 7.0,
+          "reached_checkout_pct": 35.0,
+          "left_at_checkout_pct_of_checkouts": 38.5,
+          "abandoned_value": 275437.45
+        },
+        "referral": {
+          "sessions": 1298,
+          "abandoned": 1065,
+          "abandonment_rate_pct": 82.0,
+          "points_vs_overall": 10.6,
+          "reached_checkout_pct": 31.7,
+          "left_at_checkout_pct_of_checkouts": 43.3,
+          "abandoned_value": 54944.09
+        }
+      },
+      "visit_type": {
+        "first visit": {
+          "sessions": 17149,
+          "abandoned": 13410,
+          "abandonment_rate_pct": 78.2,
+          "points_vs_overall": 6.7,
+          "reached_checkout_pct": 36.0,
+          "left_at_checkout_pct_of_checkouts": 39.4,
+          "abandoned_value": 619614.52
+        },
+        "repeat visit": {
+          "sessions": 16557,
+          "abandoned": 10681,
+          "abandonment_rate_pct": 64.5,
+          "points_vs_overall": -7.0,
+          "reached_checkout_pct": 52.1,
+          "left_at_checkout_pct_of_checkouts": 31.9,
+          "abandoned_value": 605519.22
+        }
+      },
+      "customer_type": {
+        "bought before": {
+          "sessions": 2275,
+          "abandoned": 1024,
+          "abandonment_rate_pct": 45.0,
+          "points_vs_overall": -26.5,
+          "reached_checkout_pct": 69.7,
+          "left_at_checkout_pct_of_checkouts": 21.1,
+          "abandoned_value": 77403.18
+        },
+        "never bought": {
+          "sessions": 31431,
+          "abandoned": 23067,
+          "abandonment_rate_pct": 73.4,
+          "points_vs_overall": 1.9,
+          "reached_checkout_pct": 42.0,
+          "left_at_checkout_pct_of_checkouts": 36.7,
+          "abandoned_value": 1147730.56
+        }
+      },
+      "day_of_week": {
+        "Friday": {
+          "sessions": 5312,
+          "abandoned": 3729,
+          "abandonment_rate_pct": 70.2,
+          "points_vs_overall": -1.3,
+          "reached_checkout_pct": 44.3,
+          "left_at_checkout_pct_of_checkouts": 32.8,
+          "abandoned_value": 200467.41
+        },
+        "Monday": {
+          "sessions": 5699,
+          "abandoned": 3975,
+          "abandonment_rate_pct": 69.7,
+          "points_vs_overall": -1.7,
+          "reached_checkout_pct": 45.6,
+          "left_at_checkout_pct_of_checkouts": 33.7,
+          "abandoned_value": 207152.43
+        },
+        "Saturday": {
+          "sessions": 2644,
+          "abandoned": 2010,
+          "abandonment_rate_pct": 76.0,
+          "points_vs_overall": 4.5,
+          "reached_checkout_pct": 38.4,
+          "left_at_checkout_pct_of_checkouts": 37.5,
+          "abandoned_value": 100133.18
+        },
+        "Sunday": {
+          "sessions": 2915,
+          "abandoned": 2148,
+          "abandonment_rate_pct": 73.7,
+          "points_vs_overall": 2.2,
+          "reached_checkout_pct": 38.8,
+          "left_at_checkout_pct_of_checkouts": 32.1,
+          "abandoned_value": 105274.11
+        },
+        "Thursday": {
+          "sessions": 5537,
+          "abandoned": 3941,
+          "abandonment_rate_pct": 71.2,
+          "points_vs_overall": -0.3,
+          "reached_checkout_pct": 44.9,
+          "left_at_checkout_pct_of_checkouts": 35.9,
+          "abandoned_value": 195204.3
+        },
+        "Tuesday": {
+          "sessions": 5876,
+          "abandoned": 4192,
+          "abandonment_rate_pct": 71.3,
+          "points_vs_overall": -0.1,
+          "reached_checkout_pct": 45.3,
+          "left_at_checkout_pct_of_checkouts": 36.8,
+          "abandoned_value": 211296.44
+        },
+        "Wednesday": {
+          "sessions": 5723,
+          "abandoned": 4096,
+          "abandonment_rate_pct": 71.6,
+          "points_vs_overall": 0.1,
+          "reached_checkout_pct": 44.6,
+          "left_at_checkout_pct_of_checkouts": 36.2,
+          "abandoned_value": 205605.87
+        }
+      },
+      "checkout_stage": {
+        "left before checkout": {
+          "sessions": 18908,
+          "abandoned": 18907,
+          "abandonment_rate_pct": 100.0,
+          "points_vs_overall": 28.5,
+          "reached_checkout_pct": 0.0,
+          "left_at_checkout_pct_of_checkouts": null,
+          "abandoned_value": 956979.01
+        },
+        "reached checkout": {
+          "sessions": 14798,
+          "abandoned": 5184,
+          "abandonment_rate_pct": 35.0,
+          "points_vs_overall": -36.4,
+          "reached_checkout_pct": 100.0,
+          "left_at_checkout_pct_of_checkouts": 35.0,
+          "abandoned_value": 268154.73
+        }
+      },
+      "cart_value": {
+        "$100-200": {
+          "sessions": 3104,
+          "abandoned": 1968,
+          "abandonment_rate_pct": 63.4,
+          "points_vs_overall": -8.1,
+          "reached_checkout_pct": 50.3,
+          "left_at_checkout_pct_of_checkouts": 27.2,
+          "abandoned_value": 270946.36
+        },
+        "$25 or less": {
+          "sessions": 16288,
+          "abandoned": 12602,
+          "abandonment_rate_pct": 77.4,
+          "points_vs_overall": 5.9,
+          "reached_checkout_pct": 38.3,
+          "left_at_checkout_pct_of_checkouts": 41.0,
+          "abandoned_value": 159133.54
+        },
+        "$25-50": {
+          "sessions": 6507,
+          "abandoned": 4295,
+          "abandonment_rate_pct": 66.0,
+          "points_vs_overall": -5.5,
+          "reached_checkout_pct": 49.8,
+          "left_at_checkout_pct_of_checkouts": 31.7,
+          "abandoned_value": 159792.27
+        },
+        "$50-100": {
+          "sessions": 6446,
+          "abandoned": 4372,
+          "abandonment_rate_pct": 67.8,
+          "points_vs_overall": -3.6,
+          "reached_checkout_pct": 47.4,
+          "left_at_checkout_pct_of_checkouts": 32.2,
+          "abandoned_value": 320324.86
+        },
+        "over $200": {
+          "sessions": 1361,
+          "abandoned": 854,
+          "abandonment_rate_pct": 62.7,
+          "points_vs_overall": -8.7,
+          "reached_checkout_pct": 51.4,
+          "left_at_checkout_pct_of_checkouts": 27.5,
+          "abandoned_value": 314936.71
+        }
+      },
+      "products_in_cart": {
+        "1 product": {
+          "sessions": 19570,
+          "abandoned": 15480,
+          "abandonment_rate_pct": 79.1,
+          "points_vs_overall": 7.6,
+          "reached_checkout_pct": 36.5,
+          "left_at_checkout_pct_of_checkouts": 42.7,
+          "abandoned_value": 530361.45
+        },
+        "2-3 products": {
+          "sessions": 9311,
+          "abandoned": 5935,
+          "abandonment_rate_pct": 63.7,
+          "points_vs_overall": -7.7,
+          "reached_checkout_pct": 51.5,
+          "left_at_checkout_pct_of_checkouts": 29.6,
+          "abandoned_value": 344755.33
+        },
+        "4 or more": {
+          "sessions": 4825,
+          "abandoned": 2676,
+          "abandonment_rate_pct": 55.5,
+          "points_vs_overall": -16.0,
+          "reached_checkout_pct": 59.4,
+          "left_at_checkout_pct_of_checkouts": 25.0,
+          "abandoned_value": 350016.96
+        }
+      },
+      "removed_items": {
+        "removed an item": {
+          "sessions": 6382,
+          "abandoned": 4113,
+          "abandonment_rate_pct": 64.4,
+          "points_vs_overall": -7.0,
+          "reached_checkout_pct": 54.6,
+          "left_at_checkout_pct_of_checkouts": 34.9,
+          "abandoned_value": 331168.95
+        },
+        "removed nothing": {
+          "sessions": 27324,
+          "abandoned": 19978,
+          "abandonment_rate_pct": 73.1,
+          "points_vs_overall": 1.6,
+          "reached_checkout_pct": 41.4,
+          "left_at_checkout_pct_of_checkouts": 35.1,
+          "abandoned_value": 893964.79
+        }
+      }
+    },
+    "as_of_date": "2017-08-01",
+    "abandoned_but_bought_in_a_later_session": 3674,
+    "open_carts_for_review": 20417
+  },
+  "2020-21": {
+    "period": "Nov 2020 - Jan 2021",
+    "first_day": "2020-11-01",
+    "last_day": "2021-01-31",
+    "cart_sessions": 6746,
+    "purchased_sessions": 1268,
+    "abandoned_sessions": 5478,
+    "abandonment_rate_pct": 81.2,
+    "reached_checkout_pct": 39.6,
+    "left_at_checkout_pct_of_checkouts": 52.5,
+    "abandonment_rate_pct_by_device": {
+      "desktop": 81.4,
+      "mobile": 80.8,
+      "tablet": 83.9
+    },
+    "cart_sessions_by_device": {
+      "desktop": 3875,
+      "mobile": 2722,
+      "tablet": 149
+    },
+    "came_back_and_bought_within_7_days": {
+      "carts_with_full_window": 5078,
+      "came_back": 292,
+      "rate_pct": 5.8
+    },
+    "came_back_and_bought_within_30_days": {
+      "carts_with_full_window": 3837,
+      "came_back": 267,
+      "rate_pct": 7.0
+    },
+    "cart_values_are_reliable_dollars": false,
+    "patterns": {
+      "device": {
+        "desktop": {
+          "sessions": 3875,
+          "abandoned": 3153,
+          "abandonment_rate_pct": 81.4,
+          "points_vs_overall": 0.2,
+          "reached_checkout_pct": 40.0,
+          "left_at_checkout_pct_of_checkouts": 53.4
+        },
+        "mobile": {
+          "sessions": 2722,
+          "abandoned": 2200,
+          "abandonment_rate_pct": 80.8,
+          "points_vs_overall": -0.4,
+          "reached_checkout_pct": 39.0,
+          "left_at_checkout_pct_of_checkouts": 50.8
+        },
+        "tablet": {
+          "sessions": 149,
+          "abandoned": 125,
+          "abandonment_rate_pct": 83.9,
+          "points_vs_overall": 2.7,
+          "reached_checkout_pct": 38.9,
+          "left_at_checkout_pct_of_checkouts": 58.6
+        }
+      },
+      "traffic_medium": {
+        "(data deleted)": {
+          "sessions": 612,
+          "abandoned": 446,
+          "abandonment_rate_pct": 72.9,
+          "points_vs_overall": -8.3,
+          "reached_checkout_pct": 44.1,
+          "left_at_checkout_pct_of_checkouts": 38.5
+        },
+        "(none)": {
+          "sessions": 1538,
+          "abandoned": 1251,
+          "abandonment_rate_pct": 81.3,
+          "points_vs_overall": 0.1,
+          "reached_checkout_pct": 39.7,
+          "left_at_checkout_pct_of_checkouts": 53.0
+        },
+        "<Other>": {
+          "sessions": 882,
+          "abandoned": 753,
+          "abandonment_rate_pct": 85.4,
+          "points_vs_overall": 4.2,
+          "reached_checkout_pct": 37.9,
+          "left_at_checkout_pct_of_checkouts": 61.4
+        },
+        "cpc": {
+          "sessions": 270,
+          "abandoned": 223,
+          "abandonment_rate_pct": 82.6,
+          "points_vs_overall": 1.4,
+          "reached_checkout_pct": 37.4,
+          "left_at_checkout_pct_of_checkouts": 53.5
+        },
+        "organic": {
+          "sessions": 2142,
+          "abandoned": 1774,
+          "abandonment_rate_pct": 82.8,
+          "points_vs_overall": 1.6,
+          "reached_checkout_pct": 38.5,
+          "left_at_checkout_pct_of_checkouts": 55.3
+        },
+        "referral": {
+          "sessions": 1302,
+          "abandoned": 1031,
+          "abandonment_rate_pct": 79.2,
+          "points_vs_overall": -2.0,
+          "reached_checkout_pct": 40.7,
+          "left_at_checkout_pct_of_checkouts": 48.9
+        }
+      },
+      "visit_type": {
+        "first visit": {
+          "sessions": 3968,
+          "abandoned": 3454,
+          "abandonment_rate_pct": 87.0,
+          "points_vs_overall": 5.8,
+          "reached_checkout_pct": 36.7,
+          "left_at_checkout_pct_of_checkouts": 64.7
+        },
+        "repeat visit": {
+          "sessions": 2778,
+          "abandoned": 2024,
+          "abandonment_rate_pct": 72.9,
+          "points_vs_overall": -8.3,
+          "reached_checkout_pct": 43.6,
+          "left_at_checkout_pct_of_checkouts": 37.8
+        }
+      },
+      "customer_type": {
+        "bought before": {
+          "sessions": 158,
+          "abandoned": 90,
+          "abandonment_rate_pct": 57.0,
+          "points_vs_overall": -24.2,
+          "reached_checkout_pct": 48.7,
+          "left_at_checkout_pct_of_checkouts": 11.7
+        },
+        "never bought": {
+          "sessions": 6588,
+          "abandoned": 5388,
+          "abandonment_rate_pct": 81.8,
+          "points_vs_overall": 0.6,
+          "reached_checkout_pct": 39.4,
+          "left_at_checkout_pct_of_checkouts": 53.7
+        }
+      },
+      "day_of_week": {
+        "Friday": {
+          "sessions": 1006,
+          "abandoned": 793,
+          "abandonment_rate_pct": 78.8,
+          "points_vs_overall": -2.4,
+          "reached_checkout_pct": 41.3,
+          "left_at_checkout_pct_of_checkouts": 48.7
+        },
+        "Monday": {
+          "sessions": 910,
+          "abandoned": 719,
+          "abandonment_rate_pct": 79.0,
+          "points_vs_overall": -2.2,
+          "reached_checkout_pct": 38.7,
+          "left_at_checkout_pct_of_checkouts": 45.7
+        },
+        "Saturday": {
+          "sessions": 761,
+          "abandoned": 608,
+          "abandonment_rate_pct": 79.9,
+          "points_vs_overall": -1.3,
+          "reached_checkout_pct": 41.3,
+          "left_at_checkout_pct_of_checkouts": 51.3
+        },
+        "Sunday": {
+          "sessions": 647,
+          "abandoned": 544,
+          "abandonment_rate_pct": 84.1,
+          "points_vs_overall": 2.9,
+          "reached_checkout_pct": 39.6,
+          "left_at_checkout_pct_of_checkouts": 59.8
+        },
+        "Thursday": {
+          "sessions": 1130,
+          "abandoned": 926,
+          "abandonment_rate_pct": 81.9,
+          "points_vs_overall": 0.7,
+          "reached_checkout_pct": 39.6,
+          "left_at_checkout_pct_of_checkouts": 54.5
+        },
+        "Tuesday": {
+          "sessions": 1131,
+          "abandoned": 933,
+          "abandonment_rate_pct": 82.5,
+          "points_vs_overall": 1.3,
+          "reached_checkout_pct": 37.8,
+          "left_at_checkout_pct_of_checkouts": 53.7
+        },
+        "Wednesday": {
+          "sessions": 1161,
+          "abandoned": 955,
+          "abandonment_rate_pct": 82.3,
+          "points_vs_overall": 1.1,
+          "reached_checkout_pct": 39.4,
+          "left_at_checkout_pct_of_checkouts": 54.9
+        }
+      },
+      "checkout_stage": {
+        "left before checkout": {
+          "sessions": 4076,
+          "abandoned": 4076,
+          "abandonment_rate_pct": 100.0,
+          "points_vs_overall": 18.8,
+          "reached_checkout_pct": 0.0,
+          "left_at_checkout_pct_of_checkouts": null
+        },
+        "reached checkout": {
+          "sessions": 2670,
+          "abandoned": 1402,
+          "abandonment_rate_pct": 52.5,
+          "points_vs_overall": -28.7,
+          "reached_checkout_pct": 100.0,
+          "left_at_checkout_pct_of_checkouts": 52.5
+        }
+      }
+    }
+  }
+}

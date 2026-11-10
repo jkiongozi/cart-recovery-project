@@ -10,8 +10,8 @@ import streamlit as st
 from prepare_data import GA4_RENAME, UA_RENAME, _find_excel, _read
 
 DATASETS = {
-    "2016-17 (Aug 2016 - Aug 2017)": ("*2016_17*.xlsx", UA_RENAME, True),
-    "2020-21 (Nov 2020 - Jan 2021)": ("*GA4*.xlsx", GA4_RENAME, False),
+    "2016-17 (Aug 2016 - Aug 2017)": ("*2016_17*", UA_RENAME, True),
+    "2020-21 (Nov 2020 - Jan 2021)": ("*GA4*", GA4_RENAME, False),
 }
 
 st.set_page_config(page_title="Dataset Viewer", page_icon="📊", layout="wide")
@@ -23,8 +23,12 @@ def load(name):
     path = _find_excel(pattern)
     df = _read(path, rename)
     df["outcome"] = df["purchased"].map({1: "Purchased", 0: "Abandoned"})
-    notes = pd.read_excel(path, sheet_name=0, header=None, engine="openpyxl")
-    return df, "\n".join(str(v) for v in notes[0].dropna())
+    notes = "No notes in this file. The query that made it is in the sql folder."
+    if path.lower().endswith(".xlsx"):
+        book = pd.ExcelFile(path, engine="openpyxl")
+        if len(book.sheet_names) > 1:   # the first sheet holds the notes
+            notes = "\n".join(str(v) for v in book.parse(0, header=None)[0].dropna())
+    return df, notes
 
 
 def rate_by(df, column, top=10):

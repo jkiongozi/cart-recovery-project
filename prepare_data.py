@@ -31,15 +31,28 @@ GA4_RENAME = {"user_pseudo_id": "visitor_id", "ga_session_id": "session_id", "se
 
 
 def _find_excel(pattern):
-    found = glob.glob(os.path.join(BASE, pattern))
-    if not found:
-        raise SystemExit(f"Excel file not found: {pattern} must be in {BASE}")
-    return found[0]
+    """Find a data file by name. Excel (.xlsx) or a CSV downloaded from BigQuery both work."""
+    for ext in (".xlsx", ".csv"):
+        found = sorted(glob.glob(os.path.join(BASE, pattern + ext)))
+        if found:
+            return found[0]
+    raise SystemExit(f"Data file not found: a file named like {pattern}.xlsx or {pattern}.csv "
+                     f"must be in {BASE}. See 'How to get the datasets' in README.md.")
 
 
 def _read(path, rename):
     id_col = next(old for old, new in rename.items() if new == "visitor_id")
-    df = pd.read_excel(path, sheet_name=1, dtype={id_col: str}, engine="openpyxl").rename(columns=rename)
+    if path.lower().endswith(".csv"):
+        df = pd.read_csv(path, dtype={id_col: str})
+    else:
+        # Use the sheet whose header has the ID column (the info sheet, if any, is skipped)
+        book = pd.ExcelFile(path, engine="openpyxl")
+        sheet = next((s for s in book.sheet_names
+                      if id_col in book.parse(s, nrows=0).columns), None)
+        if sheet is None:
+            raise SystemExit(f"{os.path.basename(path)}: no sheet has a '{id_col}' column.")
+        df = book.parse(sheet, dtype={id_col: str})
+    df = df.rename(columns=rename)
     df["date"] = pd.to_datetime(df["date"])
     df["transaction_revenue"] = df["transaction_revenue"].fillna(0.0)
     if "removed_from_cart" not in df:
@@ -166,8 +179,8 @@ def _value_check(df):
 
 def build():
     print("Reading the Excel files (this can take up to a minute)...")
-    ua_raw = _read(_find_excel("*2016_17*.xlsx"), UA_RENAME)
-    ga4_raw = _read(_find_excel("*GA4*.xlsx"), GA4_RENAME)
+    ua_raw = _read(_find_excel("*2016_17*"), UA_RENAME)
+    ga4_raw = _read(_find_excel("*GA4*"), GA4_RENAME)
     ua, ua_joined = _join_midnight_splits(ua_raw)
     ga4, _ = _join_midnight_splits(ga4_raw)
     ua, ga4 = _add_history(ua), _add_history(ga4)

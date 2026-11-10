@@ -19,7 +19,7 @@ from agent_data import load_for_app
 from prepare_data import BASE, DATA_DIR
 from risk import ACTIONS, average_cart, canonical_action, is_non_policy_discount
 
-load_dotenv(os.path.join(BASE, ".env"))
+load_dotenv(os.path.join(BASE, ".env"), override=True)   # .env wins over an old key saved in Windows
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
