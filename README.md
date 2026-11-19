@@ -148,6 +148,7 @@ The charts work without an OpenAI key; only the chat needs one.
 | --- | --- |
 | `python prepare_data.py` | Rebuilds the clean data from the Excel files. Run it again after any change to this file or the Excel files |
 | `python agent.py` | Starts the chat agent |
+| `python agent2.py` | Starts the same agent with no policies, to compare how the AI behaves without rules |
 | `streamlit run dashboard.py` | Opens the dashboard |
 | `streamlit run agent_app.py` | The full app: chat with the agent plus cart, budget and policy charts |
 | `streamlit run ask_agent.py` | Ask the agent in your browser, with one-click example questions, and see the tables and charts behind each answer |
@@ -237,6 +238,42 @@ Ask `How can I reduce cart abandonment?` and the agent gives 3 to 5 store-wide i
 
 Pageviews and time on site are left out of this analysis, because buying itself adds pages and minutes. The ideas are untested and show patterns in Google's data, not causes, so the agent never predicts how much abandonment will fall.
 
+## Compare: the agent without policies (`agent2.py`)
+
+`agent2.py` runs the same AI on the same carts, with no store policies. Use it to see how the AI behaves and what it recommends when nothing limits it, then compare the results with `agent.py`.
+
+```powershell
+python agent2.py
+```
+
+Ask the same questions as the main agent, for example `Review my 5 highest-value carts` or `How can I reduce cart abandonment?`. Type `quit` to stop.
+
+| | `agent.py` (with policies) | `agent2.py` (no policies) |
+| --- | --- | --- |
+| Reads `policies.md` | Yes | No |
+| Actions it can choose | The five store actions | Anything: any message, discount size, timing or channel |
+| What it sees about a cart | Facts plus policy fields (intent score, contact stage, incentive cap, high-value flag) | Raw facts only |
+| Rules enforced in code | Yes: a choice that breaks a policy is refused | No: every choice is kept |
+| Impact estimates | Not allowed | Allowed (the AI's own guesses) |
+| Timing | Each cart judged on Day 1 | Each cart treated as left yesterday |
+
+After the AI decides, Python adds two columns the AI never sees:
+
+- **Offer cost:** what the AI's offer would cost if the cart is recovered (for example, 15% of a $2,802 cart is $420). Free shipping uses the same $7 assumption as `policies.md`.
+- **Policy check (not enforced):** whether `agent.py`'s policies would have allowed the choice, and which rules it breaks.
+
+The summary line, for example "3 of 5 choices would break the store policies", shows at a glance how often the AI goes outside the rules. Store-wide ideas also get a policy check, and when the AI links an idea to a group in the data, the real figure is added in code.
+
+Results are saved to separate files, so the main agent's results are never overwritten:
+
+| File | Contents |
+| --- | --- |
+| `data/agent2_latest_review.md` | The latest cart review |
+| `data/agent2_latest_recommendations.md` | The latest store-wide ideas |
+| `data/agent2_recommendations.csv` | Every cart recommendation, with offer cost and policy check |
+
+Nothing is sent and no customer is contacted.
+
 ## How the project is built
 
 | Part | Files | Role |
@@ -245,6 +282,7 @@ Pageviews and time on site are left out of this analysis, because buying itself 
 | Decide (AI) | `agent.py`, `prompts/cart_recovery_system_prompt.md` | The OpenAI model chooses which tools to call, judges each cart's risk, chooses the action, and writes store-wide recommendations |
 | Facts and rules in code | `agent.py` | Profit math, totals, policy checks, evidence figures and the review table are done in Python, never by the model |
 | Business rules | `prompts/policies.md` | Contact schedule, customer rules, incentive cap, intent-score points, escalation rules, budget, costs, purchase-rate estimates and the simulation settings |
+| No-policy comparison | `agent2.py` | The same AI and carts with no policies; Python adds a policy check afterwards for comparison only |
 | Rules baseline | `risk.py` | Plain if-then rules the agent never sees; the dashboard compares the AI's choices with them |
 | View | `dashboard.py`, `data_viewer.py` | Streamlit pages: open carts and AI results, and the full datasets |
 | Checks | `test_agent.py` | Offline tests of every policy, the profit math and privacy |
