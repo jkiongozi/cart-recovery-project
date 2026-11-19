@@ -1,2 +1,15 @@
 [theme]
-primaryColor = "#2a78d6"
+base = "dark"
+primaryColor = "#8B7BFF"
+backgroundColor = "#0A0D14"
+secondaryBackgroundColor = "#141927"
+textColor = "#E7E9F0"
+borderColor = "#232A3B"
+baseRadius = "0.75rem"
+font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
+
+[theme.sidebar]
+backgroundColor = "#0F1320"
+secondaryBackgroundColor = "#171D2D"
+borderColor = "#232A3B"

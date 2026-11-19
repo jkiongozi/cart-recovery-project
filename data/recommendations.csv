@@ -14,3 +14,8 @@ timestamp,cart_id,recommended_action,reason,confidence,expected_profit,status
 2026-11-12T23:59:43.048223+00:00,UA-16971,Reminder email,"First-time buyer with high-value cart, sending a reminder is the best option.",Low,,Requires Human Approval
 2026-11-12T23:59:43.053710+00:00,UA-27286,Reminder email,Encouraged to send a reminder as it’s a first-time buyer with a high-value cart.,Low,,Requires Human Approval
 2026-11-12T23:59:43.060093+00:00,UA-22067,Reminder email,"First-time buyer with a high-value cart, sending a reminder is the best option.",Low,,Requires Human Approval
+2026-11-19T22:59:28.873737+00:00,UA-33574,Reminder email,"A reminder email is allowed and necessary, as this is a first reminder and there are no high discounts to consider.",Low,,Requires Human Approval
+2026-11-19T22:59:28.884080+00:00,UA-33575,Reminder email,A reminder email is appropriate and allowed for first-time buyers.,Low,,Requires Human Approval
+2026-11-19T22:59:28.895498+00:00,UA-33576,Reminder email,A checkout-completion reminder is valid and expected to encourage the customer to finalize their purchase.,Low,,Requires Human Approval
+2026-11-19T22:59:28.906285+00:00,UA-33577,Reminder email,A reminder email is suitable as the customer can be contacted and it's a first reminder.,Low,,Requires Human Approval
+2026-11-19T22:59:28.915915+00:00,UA-33579,Reminder email,A reminder email is the only option at this stage since it's a first reminder.,Low,,Requires Human Approval

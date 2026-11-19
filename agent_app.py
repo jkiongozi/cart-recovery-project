@@ -15,10 +15,11 @@ st.set_page_config(page_title="Cart Recovery Agent", page_icon="🛒", layout="w
 alt.data_transformers.disable_max_rows()
 
 # ---------- Colours: one fixed role per meaning, used in every chart ----------
-BLUE, ORANGE, AQUA, AMBER = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
-SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]   # one hue, light to dark
-INTENT = {"Low": "#86b6ef", "Medium": "#3987e5", "High": "#184f95"}
-GREY, GREY_DARK = "#b9b8b2", "#6f6e69"
+BLUE, ORANGE, AQUA, AMBER = "#8B7BFF", "#FF7A59", "#2DD4BF", "#FBBF24"   # violet, coral, mint, amber
+SEQ = ["#1B1F3A", "#2A2A5E", "#3D3A86", "#5549B0", "#6F5FD6", "#8B7BFF", "#B4A9FF"]   # dark to bright, for a dark page
+INTENT = {"Low": "#4A4290", "Medium": "#7566E8", "High": "#B4A9FF"}
+GREY, GREY_DARK = "#7C8499", "#465066"
+BG = "#0A0D14"   # page background, used for marker outlines
 STAGE_COLOURS = {"not yet eligible": GREY, "first reminder": BLUE, "second contact": ORANGE,
                  "campaign closed": GREY_DARK}
 ACTION_COLOURS = {"Reminder email": BLUE, "Free shipping": ORANGE, "5% discount": AQUA,
@@ -28,29 +29,86 @@ INTENT_BINS = ["0–19", "20–39", "40–59", "60–79", "80–100"]
 
 st.markdown("""
 <style>
-.block-container {padding-top: 1.4rem; padding-bottom: 2.5rem; max-width: 1400px;}
-.hero {position: relative; overflow: hidden; padding: 1.4rem 1.6rem; border-radius: 18px; margin-bottom: 1.1rem;
-       background: radial-gradient(1200px 300px at 0% 0%, rgba(42,120,214,.22), transparent 60%),
-                   radial-gradient(800px 300px at 100% 100%, rgba(235,104,52,.16), transparent 60%);
-       border: 1px solid rgba(128,128,128,.2);}
-.hero h1 {font-size: 1.85rem; font-weight: 720; letter-spacing: -.02em; margin: 0 0 .25rem 0;}
-.hero p {margin: 0; opacity: .75; font-size: .95rem;}
-.hero .tag {display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-            padding: .18rem .6rem; border-radius: 999px; background: rgba(42,120,214,.16); margin-bottom: .55rem;}
-.kpi {position: relative; border: 1px solid rgba(128,128,128,.2); border-radius: 14px; padding: .85rem 1rem .8rem 1.1rem;
-      background: rgba(128,128,128,.045); height: 100%; overflow: hidden;}
-.kpi:before {content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent);}
-.kpi .label {font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; opacity: .7; font-weight: 600;}
-.kpi .value {font-size: 1.6rem; font-weight: 720; letter-spacing: -.02em; margin-top: .1rem;}
-.kpi .note {font-size: .78rem; opacity: .62; margin-top: .05rem;}
-.section {font-size: 1.02rem; font-weight: 680; margin: .4rem 0 .05rem 0;}
-.sub {font-size: .84rem; opacity: .68; margin-bottom: .4rem;}
-.chip {display: inline-block; padding: .14rem .6rem; border-radius: 999px; font-size: .76rem;
-       border: 1px solid rgba(128,128,128,.28); margin: 0 .3rem .35rem 0; background: rgba(128,128,128,.05);}
-.stTabs [data-baseweb="tab-list"] {gap: .35rem;}
-.stTabs [data-baseweb="tab"] {border-radius: 999px; padding: .35rem 1rem; background: rgba(128,128,128,.07);}
-.stTabs [aria-selected="true"] {background: rgba(42,120,214,.16);}
-div[data-testid="stExpander"] details {border-radius: 12px;}
+.block-container {padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1440px;}
+[data-testid="stAppViewContainer"] {
+    background: radial-gradient(900px 500px at 10% -10%, rgba(139,123,255,.14), transparent 60%),
+                radial-gradient(700px 400px at 100% 0%, rgba(45,212,191,.08), transparent 60%), #0A0D14;}
+[data-testid="stHeader"] {background: transparent;}
+h1, h2, h3 {letter-spacing: -.02em;}
+
+/* Hero */
+.hero {position: relative; overflow: hidden; padding: 1.8rem 2rem; border-radius: 22px; margin-bottom: 1.3rem;
+       background: linear-gradient(135deg, rgba(139,123,255,.16), rgba(20,25,39,.6) 45%, rgba(255,122,89,.10));
+       border: 1px solid rgba(139,123,255,.28); box-shadow: 0 20px 60px -30px rgba(139,123,255,.55);}
+.hero:after {content: ""; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%;
+             background: radial-gradient(circle, rgba(45,212,191,.22), transparent 70%);}
+.hero h1 {font-size: 2.2rem; font-weight: 800; margin: 0 0 .35rem 0; line-height: 1.1;
+          background: linear-gradient(90deg, #FFFFFF 0%, #C9C1FF 55%, #FFB49F 100%);
+          -webkit-background-clip: text; background-clip: text; color: transparent;}
+.hero p {margin: 0; color: #A3A9BC; font-size: .95rem;}
+.hero .tag {display: inline-flex; align-items: center; gap: .45rem; font-size: .7rem; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase; padding: .28rem .75rem; border-radius: 999px;
+            color: #C9C1FF; background: rgba(139,123,255,.14); border: 1px solid rgba(139,123,255,.35); margin-bottom: .7rem;}
+.hero .tag:before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2DD4BF;
+                   box-shadow: 0 0 0 0 rgba(45,212,191,.7); animation: pulse 2s infinite;}
+@keyframes pulse {0% {box-shadow: 0 0 0 0 rgba(45,212,191,.6);} 70% {box-shadow: 0 0 0 8px rgba(45,212,191,0);}
+                  100% {box-shadow: 0 0 0 0 rgba(45,212,191,0);}}
+
+/* KPI cards */
+.kpi {position: relative; border-radius: 16px; padding: 1rem 1.1rem .95rem; height: 100%; overflow: hidden;
+      background: linear-gradient(180deg, rgba(23,29,45,.95), rgba(15,19,32,.95));
+      border: 1px solid #232A3B; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;}
+.kpi:hover {transform: translateY(-3px); border-color: var(--accent);
+            box-shadow: 0 14px 34px -18px var(--accent);}
+.kpi:before {content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px;
+             background: linear-gradient(90deg, var(--accent), transparent);}
+.kpi:after {content: ""; position: absolute; right: -30px; bottom: -40px; width: 110px; height: 110px; border-radius: 50%;
+            background: var(--accent); opacity: .08; filter: blur(4px);}
+.kpi .label {font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: #8A91A6; font-weight: 700;}
+.kpi .value {font-size: 1.75rem; font-weight: 800; letter-spacing: -.03em; margin-top: .2rem; color: #F4F5FA;
+             font-variant-numeric: tabular-nums;}
+.kpi .note {font-size: .76rem; color: #7C8499; margin-top: .1rem;}
+
+/* Section titles */
+.section {font-size: 1.05rem; font-weight: 700; margin: .9rem 0 .1rem 0; display: flex; align-items: center; gap: .55rem;}
+.section:before {content: ""; width: 4px; height: 1.05rem; border-radius: 4px;
+                 background: linear-gradient(180deg, #8B7BFF, #2DD4BF);}
+.sub {font-size: .84rem; color: #8A91A6; margin: 0 0 .55rem .95rem;}
+
+/* Chips */
+.chip {display: inline-block; padding: .22rem .7rem; border-radius: 999px; font-size: .74rem; font-weight: 500;
+       border: 1px solid #2A3247; margin: 0 .3rem .4rem 0; background: #171D2D; color: #C3C8D6;}
+
+/* Tabs as a segmented control */
+.stTabs [data-baseweb="tab-list"] {gap: .3rem; padding: .3rem; border-radius: 14px; background: #10141F;
+                                   border: 1px solid #232A3B; width: fit-content;}
+.stTabs [data-baseweb="tab"] {border-radius: 10px; padding: .45rem 1.1rem; background: transparent; color: #9AA1B5;
+                              font-weight: 600; height: auto;}
+.stTabs [data-baseweb="tab"]:hover {color: #E7E9F0; background: rgba(139,123,255,.08);}
+.stTabs [aria-selected="true"] {background: linear-gradient(135deg, #6F5FD6, #8B7BFF) !important; color: #fff !important;
+                                box-shadow: 0 6px 18px -8px rgba(139,123,255,.8);}
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {display: none;}
+
+/* Buttons */
+.stButton > button {border-radius: 12px; border: 1px solid #2A3247; background: #141927; color: #D5D9E4;
+                    font-weight: 500; text-align: left; justify-content: flex-start; transition: all .15s ease;}
+.stButton > button:hover {border-color: #8B7BFF; color: #fff; background: rgba(139,123,255,.12);
+                          transform: translateX(2px);}
+
+/* Sidebar */
+[data-testid="stSidebar"] h3 {font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: #8A91A6;}
+
+/* Chat */
+[data-testid="stChatMessage"] {border-radius: 16px; border: 1px solid #1E2434; background: rgba(20,25,39,.6);
+                               padding: .9rem 1rem;}
+[data-testid="stChatInput"] textarea {font-size: .95rem;}
+[data-testid="stChatInput"] > div {border-radius: 16px; border: 1px solid #2A3247;
+                                   box-shadow: 0 10px 30px -18px rgba(139,123,255,.6);}
+
+/* Tables, expanders, charts */
+div[data-testid="stExpander"] details {border-radius: 14px; border: 1px solid #232A3B; background: #10141F;}
+[data-testid="stDataFrame"] {border-radius: 14px; overflow: hidden; border: 1px solid #232A3B;}
+[data-testid="stVegaLiteChart"] {background: #10141F; border: 1px solid #1E2434; border-radius: 16px; padding: .8rem;}
 </style>""", unsafe_allow_html=True)
 
 
@@ -85,8 +143,13 @@ def when(selection, yes, no):
 
 def clean(chart, height=None):
     chart = chart.properties(height=height) if height else chart
-    return chart.configure_view(strokeWidth=0).configure_axis(
-        gridDash=[2, 3], gridOpacity=.5, domain=False, tickSize=0, labelPadding=6, titleFontWeight="normal")
+    return (chart.configure(background="transparent", font="Plus Jakarta Sans")
+            .configure_view(strokeWidth=0)
+            .configure_axis(gridColor="#232A3B", gridDash=[2, 4], gridOpacity=1, domain=False, tickSize=0,
+                            labelPadding=8, labelColor="#9AA1B5", titleColor="#9AA1B5", titleFontWeight="normal")
+            .configure_legend(labelColor="#C3C8D6", titleColor="#9AA1B5")
+            .configure_text(color="#E7E9F0")
+            .configure_title(anchor="start", fontSize=13, fontWeight=700, offset=10, color="#E7E9F0"))
 
 
 def kpi(col, label, value, note="", accent=BLUE):
@@ -213,8 +276,8 @@ def linked_dashboard(df):
 
     timeline = base.mark_area(
         line={"color": BLUE, "strokeWidth": 2}, interpolate="monotone",
-        color=alt.Gradient(gradient="linear", stops=[alt.GradientStop(color="rgba(42,120,214,0.05)", offset=0),
-                                                     alt.GradientStop(color="rgba(42,120,214,0.45)", offset=1)],
+        color=alt.Gradient(gradient="linear", stops=[alt.GradientStop(color="rgba(139,123,255,0.02)", offset=0),
+                                                     alt.GradientStop(color="rgba(139,123,255,0.45)", offset=1)],
                            x1=1, x2=1, y1=1, y2=0)
     ).encode(
         x=alt.X("week:T", title=None, axis=alt.Axis(format="%b %Y", grid=False)),
@@ -281,7 +344,7 @@ def opportunity_map(df):
                  alt.Tooltip("carts:Q", title="Carts", format=","), alt.Tooltip("value:Q", title="Value", format="$,.2f")])
     labels = base.mark_text(fontSize=11, fontWeight=600).encode(
         text=alt.Text("carts:Q", format=","),
-        color=when(f"datum.value > {grid['value'].quantile(.7):.2f}", alt.value("white"), alt.value("#0b0b0b")))
+        color=when(f"datum.value > {grid['value'].quantile(.7):.2f}", alt.value("#0A0D14"), alt.value("#E7E9F0")))
     focus = alt.Chart(pd.DataFrame([{"x": b, "y": y} for b in INTENT_BINS[3:] for y in order_y[:3]])).mark_rect(
         fill=None, stroke=ORANGE, strokeWidth=2.5, cornerRadius=5).encode(
         x=alt.X("x:O", sort=INTENT_BINS), y=alt.Y("y:O", sort=order_y))
@@ -314,9 +377,7 @@ def natural_lollipop():
 with insight_tab:
     heading("Linked overview",
             "Every chart below the timeline shows the weeks you select. Double-click a chart to clear its selection.")
-    show(linked_dashboard(carts).configure_view(strokeWidth=0).configure_axis(gridDash=[2, 3], gridOpacity=.5,
-                                                                               domain=False, tickSize=0)
-         .configure_title(anchor="start", fontSize=13, fontWeight=600, offset=10))
+    show(clean(linked_dashboard(carts)))
 
     left, right = st.columns([1.15, 1])
     with left:
@@ -391,7 +452,7 @@ with budget_tab:
                 x=alt.X("rank:Q", title="Priority (1 = first)", scale=alt.Scale(domain=[0.5, len(pdf) + .5])),
                 y=alt.Y("spent:Q", title="Spent if all recovered", axis=alt.Axis(format="$,.0f"),
                         scale=alt.Scale(domain=[0, budget * 1.08])))
-            pts = alt.Chart(pdf).mark_circle(size=80, opacity=1, stroke="white", strokeWidth=1.5).encode(
+            pts = alt.Chart(pdf).mark_circle(size=80, opacity=1, stroke=BG, strokeWidth=1.5).encode(
                 x="rank:Q", y="spent:Q", color=colour, tooltip=tips)
             cap = alt.Chart(pd.DataFrame({"y": [budget], "t": [f"budget {money(budget)}"]}))
             show(clean(line + pts + cap.mark_rule(strokeDash=[5, 4], color=ORANGE).encode(y="y:Q")
@@ -399,7 +460,7 @@ with budget_tab:
                        .encode(y="y:Q", x=alt.value(4), text="t:N"), 300))
         with right:
             heading("Who gets the budget", "Each bubble is a chosen cart; size = incentive cost.")
-            bubbles = alt.Chart(pdf).mark_circle(opacity=.85, stroke="white", strokeWidth=1.5).encode(
+            bubbles = alt.Chart(pdf).mark_circle(opacity=.85, stroke=BG, strokeWidth=1.5).encode(
                 x=alt.X("intent_score:Q", title="Purchase-intent score", scale=alt.Scale(domain=[0, 105])),
                 y=alt.Y("cart_value:Q", title="Cart value", scale=alt.Scale(type="log"), axis=alt.Axis(format="$,.0f")),
                 size=alt.Size("incentive_cost:Q", legend=None, scale=alt.Scale(range=[60, 420])),
@@ -436,7 +497,7 @@ with policy_tab:
         color=alt.Color("stage:N", legend=None, scale=alt.Scale(domain=list(STAGE_COLOURS),
                                                                range=list(STAGE_COLOURS.values()))),
         tooltip=[alt.Tooltip("label:N", title="Stage"), alt.Tooltip("what:N", title="What happens")])
-    words = tl.mark_text(color="white", fontSize=11, fontWeight=600).encode(
+    words = tl.mark_text(color="#FFFFFF", fontSize=11, fontWeight=600).encode(
         x="mid:Q", text=when("datum.end - datum.start >= 1.5", "label:N", alt.value("")))
     show(clean(bars + words, 70))
     with st.expander("📄 Full policy text", expanded=True):
@@ -554,7 +615,7 @@ def review_charts(review_args):
         x = alt.X("intent_score:Q", title="Purchase-intent score", scale=alt.Scale(domain=[0, 100]))
         y = alt.Y("cart_value:Q", title="Cart value", scale=alt.Scale(type="log", domain=[1, ymax]),
                   axis=alt.Axis(format="$,.0f"))
-        dots = alt.Chart(df).mark_circle(size=230, opacity=.95, stroke="white", strokeWidth=2).encode(
+        dots = alt.Chart(df).mark_circle(size=230, opacity=.95, stroke=BG, strokeWidth=2).encode(
             x=x, y=y, color=alt.Color("action:N", title="Action after checks",
                                       scale=alt.Scale(domain=list(ACTION_COLOURS), range=list(ACTION_COLOURS.values())),
                                       legend=alt.Legend(orient="bottom", columns=3)),
