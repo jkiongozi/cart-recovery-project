@@ -43,7 +43,7 @@ def canonical_action(text):
 
 
 def is_non_policy_discount(text):
-    """True for discount offers that are not the policy discount (e.g. '10% welcome offer', '15% off').
+    """True for discount offers that are not the policy discount (e.g. '10% coupon', '15% off').
     Negations such as 'no discount' or 'without a discount' are not discounts."""
     t = _norm(text)
     if canonical_action(t):

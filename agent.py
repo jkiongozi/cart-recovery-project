@@ -7,6 +7,7 @@ The AI decides which tools to call; Python does the data access and math.
 Only the prepared Excel data is used. Visitor IDs and locations never reach the AI.
 """
 import csv
+import functools
 import json
 import os
 import re
@@ -34,6 +35,8 @@ SIMULATED = all(c["marketing_state"] == "SUBSCRIBED" for c in CHECKOUTS)
 BY_ID = {c["cart_id"]: c for c in CHECKOUTS}
 AVG_CART = average_cart(CHECKOUTS)  # average of carts above $0
 ZERO_CARTS = sum(1 for c in CHECKOUTS if c["cart_value"] <= 0)
+HIGH_VALUE = STATS["2016-17"]["high_value_threshold"]    # policy 2.1: top 10% of open cart values
+NATURAL = STATS["2016-17"]["natural_return"]              # policy 3.1: bought later with no action
 
 # ---------- The agent's instructions ----------
 with open(os.path.join(BASE, "prompts", "cart_recovery_system_prompt.md"), encoding="utf-8") as f:
@@ -42,7 +45,8 @@ with open(os.path.join(BASE, "prompts", "cart_recovery_system_prompt.md"), encod
 SYSTEM_PROMPT += f"""
 
 ## Runtime context (added by the code)
-- "Today" for this review is {AS_OF}, the last day of the data. Ages are counted from that date.
+- The data ends on {AS_OF}. Contact timing is a historical replay: each cart is judged a set number of days after it was left (see contact_stage).
+- High-value carts are those worth ${HIGH_VALUE:,.2f} or more (top 10% of open carts).
 - Email consent is {"simulated: every cart is treated as subscribed" if SIMULATED else "unknown, so no email action is allowed"}.
 - Your only data source is the prepared Excel data. No ML model is connected yet. Do not pretend to check other sources.
 - Tools return facts only. Judging risk and choosing the action is YOUR job.
@@ -50,10 +54,78 @@ SYSTEM_PROMPT += f"""
 """
 
 
+# ---------- New policy facts, all computed in code ----------
+INTENT_POINTS = {"reached checkout": 35, "bought before": 25, "repeat visit": 15,
+                 "20+ pageviews": 15, "10+ minutes on site": 10, "removed an item": -10}   # policy 3.2
+
+
+def intent(c):
+    """Policy 3.2: transparent purchase-intent score, separate from abandonment risk."""
+    signals = {"reached checkout": bool(c["reached_checkout"]),
+               "bought before": c.get("previous_orders", 0) > 0,
+               "repeat visit": (c.get("visit_number") or 1) > 1,
+               "20+ pageviews": (c.get("pageviews") or 0) >= 20,
+               "10+ minutes on site": (c.get("time_on_site") or 0) >= 600,
+               "removed an item": bool(c["removed_from_cart"])}
+    hits = [k for k, on in signals.items() if on]
+    score = max(0, min(100, sum(INTENT_POINTS[k] for k in hits)))
+    band = "High" if score >= 60 else "Medium" if score >= 30 else "Low"
+    return score, band, hits
+
+
+def evaluation_day(c):
+    """Policy 2.2 replay: the day after abandonment at which this cart is judged.
+    'data end' in policies.md uses the real age at the end of the data instead."""
+    setting = _policy_numbers()["evaluation_day"]
+    day = c["days_since_abandoned"] if setting is None else setting
+    return int(day) if float(day).is_integer() else day
+
+
+def contact_stage(day):
+    pol = _policy_numbers()
+    eligible = (pol["eligibility_hours"] or 24) / 24
+    second, close = pol["second_reminder_day"] or 5, pol["close_day"] or 7
+    if day < eligible:
+        return "not yet eligible"
+    if day >= close:
+        return "campaign closed"
+    return "second contact" if day >= second else "first reminder"
+
+
+def reminder_focus(c, stage):
+    """Policy 2.4: checkout stage shapes the reminder, not the cause."""
+    if stage not in ("first reminder", "second contact"):
+        return "none"
+    kind = "checkout-completion reminder" if c["reached_checkout"] else "basic cart reminder"
+    return ("second " if stage == "second contact" else "") + kind
+
+
+def natural_return(c):
+    """Policy 3.1: how often similar carts were bought within 7 days with no action."""
+    seg = NATURAL["segments"]
+    ctype = "bought before" if c.get("previous_orders", 0) > 0 else "never bought"
+    stage = "reached checkout" if c["reached_checkout"] else "left before checkout"
+    return {"customer_type": f"{ctype}: {seg['customer_type'][ctype]['came_back_pct']}%",
+            "checkout_stage": f"{stage}: {seg['checkout_stage'][stage]['came_back_pct']}%",
+            "all_carts": f"{NATURAL['overall_pct']}%"}
+
+
+def incentive_cap(c):
+    """Policy 2.5: incentives may not exceed a share of estimated gross profit."""
+    pol = _policy_numbers()
+    gross = c["cart_value"] * (1 - (pol["product_cost_pct"] or 0) / 100)
+    return round(gross, 2), (round(gross * pol["incentive_cap_pct"] / 100, 2)
+                             if pol["incentive_cap_pct"] is not None else None)
+
+
 def safe_view(c):
     """Facts the AI is allowed to see: no visitor IDs or locations, and no verdicts."""
     subscribed = c["marketing_state"] == "SUBSCRIBED"
     orders = c.get("previous_orders", 0)
+    day = evaluation_day(c)
+    stage = contact_stage(day)
+    score, band, hits = intent(c)
+    gross, cap = incentive_cap(c)
     return {
         "cart_id": c["cart_id"],
         "session_date": c["created_at"],
@@ -71,16 +143,24 @@ def safe_view(c):
         "email_subscribed": subscribed,
         "consent_is_simulated": subscribed,
         "returning_customer": orders > 0,
-        # Policy fact: subscribed first-time buyers automatically get the 10% welcome offer
-        "welcome_offer_applies": orders == 0 and subscribed,
         "previous_orders": orders,
         "lifetime_spend": c.get("lifetime_spend", 0.0),
+        "high_value": c["cart_value"] >= HIGH_VALUE,
+        "evaluation_day": day,
+        "contact_stage": stage,
+        "reminder_focus": reminder_focus(c, stage),
+        "intent_score": score,
+        "intent_band": band,
+        "intent_signals": hits,
+        "estimated_gross_profit": gross,
+        "incentive_cap": cap,
+        "natural_return_within_7_days": natural_return(c),
     }
 
 
 # ---------- Tools ----------
 def list_abandoned_checkouts(limit=20, min_value=0, max_days_old=None, reached_checkout_only=False,
-                             returning_only=False, sort_by="newest"):
+                             returning_only=False, high_value_only=False, sort_by="newest"):
     if not isinstance(limit, int) or limit < 1:
         limit = 20   # never pass a missing or negative limit into the slice
     views = [safe_view(c) for c in CHECKOUTS if c["cart_value"] >= (min_value or 0)]
@@ -90,12 +170,17 @@ def list_abandoned_checkouts(limit=20, min_value=0, max_days_old=None, reached_c
         views = [v for v in views if v["reached_checkout"]]
     if returning_only:
         views = [v for v in views if v["returning_customer"]]
-    if sort_by == "value":
+    if high_value_only:
+        views = [v for v in views if v["high_value"]]
+    if sort_by == "intent":
+        views.sort(key=lambda v: (-v["intent_score"], -v["cart_value"], v["cart_id"]))
+    elif sort_by == "value":
         views.sort(key=lambda v: (-v["cart_value"], v["cart_id"]))
     else:
         views.sort(key=lambda v: (v["days_since_abandoned"], v["cart_id"]))
     return {
         "total_found": len(views),
+        "high_value_threshold": HIGH_VALUE,
         "store_average_cart_value_excluding_zero": AVG_CART,
         "zero_value_carts_in_store": ZERO_CARTS,
         "carts": views[:limit],
@@ -112,7 +197,8 @@ def _band(value, edges, labels):
 def summarize_all_carts():
     """Plain counts and dollar totals across every open cart. No verdicts."""
     views = [safe_view(c) for c in CHECKOUTS]
-    groups = {"by_age": {}, "by_stage": {}, "by_device": {}, "by_customer": {}, "by_cart_value": {}}
+    groups = {"by_age": {}, "by_stage": {}, "by_device": {}, "by_customer": {}, "by_cart_value": {},
+              "by_intent": {}, "by_priority": {}}
     for v in views:
         keys = {
             "by_age": _band(v["days_since_abandoned"], [3, 7, 30],
@@ -122,6 +208,8 @@ def summarize_all_carts():
             "by_customer": "returning customer" if v["returning_customer"] else "first-time buyer",
             "by_cart_value": _band(v["cart_value"], [0, 50, 150],
                                    ["$0", "$0.01-50", "$50-150", "over $150"]),
+            "by_intent": f"{v['intent_band']} intent",
+            "by_priority": "high value" if v["high_value"] else "regular",
         }
         for group, key in keys.items():
             b = groups[group].setdefault(key, {"carts": 0, "value": 0.0})
@@ -129,7 +217,8 @@ def summarize_all_carts():
             b["value"] = round(b["value"] + v["cart_value"], 2)
     return {"total_open_carts": len(views), "total_value": round(sum(v["cart_value"] for v in views), 2),
             "zero_value_carts": ZERO_CARTS, "average_cart_excluding_zero": AVG_CART,
-            "as_of_date": AS_OF, **groups}
+            "as_of_date": AS_OF, "high_value_threshold": HIGH_VALUE,
+            "natural_return_within_7_days": NATURAL, **groups}
 
 
 def compare_datasets():
@@ -152,16 +241,17 @@ def analyze_abandonment():
             "Groups under 100 sessions are left out. 2020-21 has no dollar, cart value or product count groups."}
 
 
-OFFER_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:%|percent)\s*(?:off|discount|coupon|promo)|"
+OFFER_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:%|percent)\s*(?:off|discount|coupon|promo|welcome|offer)|"
                       r"(?:discount|coupon|promo)\w*\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:%|percent)", re.I)
 
 
 def _policy_conflict(text):
-    """Offers bigger than the policy allows. 5% (recovery) and 10% (welcome offer) are the only policy sizes."""
+    """Offers other than the policy size. The 5% recovery discount is the only discount the policies allow."""
+    allowed = _policy_numbers()["max_discount_pct"]
     for m in OFFER_RE.finditer(text):
         pct = float(m.group(1) or m.group(2))
-        if pct not in (5, 10):
-            return f"proposes a {pct:g}% offer; the policies only allow the 5% recovery discount and the 10% welcome offer"
+        if pct != allowed:
+            return f"proposes a {pct:g}% offer; the policies only allow the {allowed:g}% recovery discount for returning customers"
     return None
 
 
@@ -196,7 +286,7 @@ def submit_recommendations(recommendations, notes=""):
         *cards,
         *([f"- {_cell(notes)}"] if notes else []),
         "- Evidence figures are computed in code. They show patterns in Google Merchandise Store data, "
-        "not causes, and not Jb Prints shoppers.",
+        "not causes.",
         "- The ideas are the AI's. None has been tested, so no improvement is promised.",
         *[f"- Left out: {x}" for x in rejected],
     ])
@@ -232,11 +322,18 @@ def get_review_rows(cart_ids):
     }
 
 
+_POLICY_CACHE = {}
+
+
 def get_store_policies():
+    """Read policies.md. Re-read only when the file changes, so edits apply without a restart."""
     if not os.path.exists(POLICIES):
         return {"policies": "No policy file found. Policy information is unavailable."}
-    with open(POLICIES, encoding="utf-8") as f:
-        return {"policies": f.read()}
+    stamp = os.path.getmtime(POLICIES)
+    if _POLICY_CACHE.get("stamp") != stamp:
+        with open(POLICIES, encoding="utf-8") as f:
+            _POLICY_CACHE.update(stamp=stamp, text=f.read())
+    return {"policies": _POLICY_CACHE["text"]}
 
 
 RECOVERY_ACTIONS = {"Reminder email", "Free shipping", "5% discount"}   # actions that try to win the sale
@@ -245,10 +342,15 @@ PASSIVE_ACTIONS = {"No action", "Escalate for human review"}           # margin 
 
 def _policy_numbers():
     """Read the numbers the profit math needs from prompts/policies.md. '?' means unknown (None)."""
-    text = get_store_policies()["policies"]
+    return _parse_policies(get_store_policies()["policies"])
+
+
+@functools.lru_cache(maxsize=8)
+def _parse_policies(text):
 
     def find(label):
         for line in text.splitlines():
+            line = line.replace("$", "")
             if line.strip("- ").lower().startswith(label.lower() + ":"):   # exact label, not "Free shipping threshold"
                 value = line.split(":", 1)[-1]
                 m = re.search(r"\d+(?:\.\d+)?", value)
@@ -260,11 +362,54 @@ def _policy_numbers():
         "email_cost": find("Cost to send one recovery email"),
         "free_shipping_cost": find("Average shipping cost per order"),
         "max_discount_pct": find("Maximum recovery discount allowed"),
+        "incentive_cap_pct": find("Incentive cap as % of estimated gross profit"),
+        "eligibility_hours": find("Recovery eligibility starts after hours of inactivity"),
+        "second_reminder_day": find("Second reminder (optional) on day"),
+        "close_day": find("Campaign closes on day"),
+        "evaluation_day": find("Evaluate each cart this many days after it was left"),
+        "budget": find("Default simulated incentive budget"),
         "rates": {a: find(a) for a in ACTIONS},
     }
 
 
-def calculate_profit(cart_id, actions=None):
+INCENTIVES = {"Free shipping", "5% discount"}
+
+
+def _why_not(c, action, day, pol):
+    """Every policy check for one action, in order. None means allowed."""
+    if action not in RECOVERY_ACTIONS:
+        return None                                      # No action and Escalate are always allowed
+    if c["marketing_state"] != "SUBSCRIBED":
+        return "Customer is not subscribed to email marketing"
+    stage = contact_stage(day)
+    if stage == "not yet eligible":
+        return f"Policy 2.2: not yet eligible (less than {pol['eligibility_hours'] or 24:g} hours since the cart was left)"
+    if stage == "campaign closed":
+        return f"Policy 2.2: the recovery campaign closes on Day {pol['close_day'] or 7:g}"
+    if action not in INCENTIVES:
+        return None
+    if stage == "first reminder":
+        return ("Policy 2.5: a reminder comes first; incentives are only considered at the second contact "
+                f"(Day {pol['second_reminder_day'] or 5:g})")
+    if action == "5% discount" and c.get("previous_orders", 0) == 0:
+        return "Policy 2.3: first-time buyer, and the 5% discount is only for returning customers"
+    cost = _incentive_cost(c, action, pol)
+    _, cap = incentive_cap(c)
+    if cost is not None and cap is not None and cost > cap:
+        return (f"Policy 2.5: {action.lower()} costs ${cost:,.2f}, above the incentive cap of ${cap:,.2f} "
+                f"({pol['incentive_cap_pct']:g}% of estimated gross profit)")
+    return None
+
+
+def _incentive_cost(c, action, pol):
+    if action == "Free shipping":
+        return pol["free_shipping_cost"]
+    if action == "5% discount":
+        return None if pol["max_discount_pct"] is None else round(c["cart_value"] * pol["max_discount_pct"] / 100, 2)
+    return 0.0
+
+
+def calculate_profit(cart_id, actions=None, day=None):
     """Profit math done entirely in Python from the cart and the store policies.
     Returns facts for each action; the AI decides which action to recommend."""
     c = BY_ID.get(str(cart_id))
@@ -276,19 +421,14 @@ def calculate_profit(cart_id, actions=None):
     value = c["cart_value"]
     products = value                                     # the data has no shipping, tax or line discounts
     keep = products * (1 - pol["product_cost_pct"] / 100)   # what the store keeps on this cart
-    subscribed = c["marketing_state"] == "SUBSCRIBED"
-    returning = c.get("previous_orders", 0) > 0
+    day = evaluation_day(c) if day is None else day
     results = []
     for action in (actions or ACTIONS):
         if action not in ACTIONS:
             results.append({"action": action, "error": f"Unknown action. Use one of {ACTIONS}"})
             continue
         r = {"action": action}
-        why_not = None
-        if action in RECOVERY_ACTIONS and not subscribed:
-            why_not = "Customer is not subscribed to email marketing"
-        elif action == "5% discount" and not returning:
-            why_not = "First-time buyer: the policy discount is only for returning customers"
+        why_not = _why_not(c, action, day, pol)
         if why_not:
             r.update({"allowed": False, "why_not": why_not})
             results.append(r)
@@ -312,7 +452,6 @@ def calculate_profit(cart_id, actions=None):
         r["allowed"] = True
         if action == "5% discount":
             r["discount_pct_from_policy"] = pol["max_discount_pct"]
-            r["sale_check"] = "Sale status is not in this data; check before any discount"
         if unknown:
             r.update({"profit_if_recovered": None, "expected_profit": None,
                       "note": f"Profit unknown: {unknown}. Do not estimate it."})
@@ -334,7 +473,82 @@ def calculate_profit(cart_id, actions=None):
         if rate is None:
             r["note"] = "Purchase rate is '?' in policies.md, so expected profit is unknown. Do not estimate it."
         results.append(r)
-    return {"cart_id": c["cart_id"], "cart_value": value, "results": results}
+    gross, cap = incentive_cap(c)
+    return {"cart_id": c["cart_id"], "cart_value": value, "evaluation_day": day,
+            "contact_stage": contact_stage(day), "estimated_gross_profit": gross, "incentive_cap": cap,
+            "results": results}
+
+
+ESCALATION_REASONS = ["missing input", "policy conflict", "exceptional case"]
+
+
+def _missing_inputs(c):
+    """Policy 3.4: inputs this cart needs that are missing or unusable."""
+    pol = _policy_numbers()
+    gaps = []
+    if not c["cart_value"] or c["cart_value"] <= 0:
+        gaps.append("cart value is $0 or negative")
+    for key, label in [("product_cost_pct", "product cost %"), ("max_discount_pct", "discount size"),
+                       ("free_shipping_cost", "free-shipping cost"), ("incentive_cap_pct", "incentive cap")]:
+        if pol[key] is None:
+            gaps.append(f"{label} is missing in policies.md")
+    return gaps
+
+
+def _escalation_problem(c, category, reason):
+    """Policy 3.4: escalate only for a missing input, a policy conflict or an exceptional case,
+    and never only because the cart value is high."""
+    if category not in ESCALATION_REASONS:
+        return ("Policy 3.4: an escalation must name one of: missing input, policy conflict, exceptional case")
+    if category == "missing input" and not _missing_inputs(c):
+        return "Policy 3.4: no required input is missing for this cart"
+    if category == "exceptional case" and re.fullmatch(
+            r"\W*(very |a )?(large|big|high[- ]value|expensive|valuable)( cart| order| basket)?\W*", reason or "", re.I):
+        return "Policy 3.4: high value alone is not a reason for human review"
+    return None
+
+
+def _alternatives(cid, chosen):
+    """Policy 3.3: why each other action was not chosen, from the computed checks."""
+    out = []
+    for r in calculate_profit(cid)["results"]:
+        a = r["action"]
+        if a == chosen:
+            continue
+        if r.get("allowed") is False:
+            out.append(f"{a}: not allowed ({r['why_not']})")
+        elif a in INCENTIVES:
+            out.append(f"{a}: allowed, costs ${r.get('incentive_cost_if_recovered', 0):,.2f} if recovered")
+        else:
+            out.append(f"{a}: allowed")
+    return out
+
+
+def plan_incentive_budget(budget=None, max_carts=20):
+    """Policy 3.5 (demonstration): spend a fixed incentive budget at the second contact.
+    Ranks eligible carts by intent score, then value, and gives each the cheapest allowed incentive."""
+    pol = _policy_numbers()
+    budget = float(budget if budget is not None else (pol["budget"] or 50))
+    day = int(pol["second_reminder_day"] or 5)
+    options = []
+    for c in CHECKOUTS:
+        allowed = [(cost, a) for a in INCENTIVES
+                   if _why_not(c, a, day, pol) is None and (cost := _incentive_cost(c, a, pol)) is not None]
+        if allowed:
+            cost, action = min(allowed)                  # policy 2.5: cheaper allowed incentive
+            score, band, _ = intent(c)
+            options.append((score, c["cart_value"], c["cart_id"], action, cost, band))
+    options.sort(key=lambda o: (-o[0], -o[1], o[2]))
+    chosen, spent = [], 0.0
+    for score, value, cid, action, cost, band in options:
+        if spent + cost <= budget and len(chosen) < max_carts:
+            chosen.append({"cart_id": cid, "cart_value": value, "intent_score": score, "intent_band": band,
+                           "incentive": action, "incentive_cost": cost})
+            spent += cost
+    return {"budget": budget, "spent_if_all_recovered": round(spent, 2), "carts_eligible_for_an_incentive": len(options),
+            "carts_chosen": len(chosen), "evaluated_at_day": day, "plan": chosen,
+            "note": ("Heuristic ranking by intent score, then value. The cost is only paid if the cart is "
+                     "recovered. Without measured response rates this is not profit-maximizing.")}
 
 
 def record_recommendation(cart_id, recommended_action, reason, confidence, expected_profit=None):
@@ -345,10 +559,10 @@ def record_recommendation(cart_id, recommended_action, reason, confidence, expec
         return {"saved": False,
                 "error": "Only the policy discount for returning customers is allowed; "
                          f"'{recommended_action}' is not a store policy action."}
-    if c and action == "5% discount" and c.get("previous_orders", 0) == 0:
-        return {"saved": False,
-                "error": "Policy: this customer has no previous orders, so they are a first-time buyer. "
-                         "The policy discount is only for returning customers."}
+    if c and action in RECOVERY_ACTIONS:
+        why = _why_not(c, action, evaluation_day(c), _policy_numbers())
+        if why:
+            return {"saved": False, "error": why}
     os.makedirs(DATA_DIR, exist_ok=True)
     path = os.path.join(DATA_DIR, "recommendations.csv")
     new_file = not os.path.exists(path)
@@ -397,6 +611,13 @@ def submit_review(carts, notes=""):
                 blocked_reason = profit.get("why_not")
                 key = "No action"
                 profit = calculate_profit(cid, ["No action"])["results"][0]
+        if key == "Escalate for human review":
+            problem = _escalation_problem(c, j.get("escalation_reason"), j.get("reason", ""))
+            if problem:
+                blocked_reason = problem
+                key = "Reminder email" if _why_not(c, "Reminder email", evaluation_day(c), _policy_numbers()) is None \
+                    else "No action"
+                profit = calculate_profit(cid, [key])["results"][0]
         action = key or suggested or "not given"   # unmatched text is kept as written, never guessed
 
         if profit and profit.get("profit_if_recovered") is not None:
@@ -433,17 +654,27 @@ def submit_review(carts, notes=""):
         shown_action = f"{action} (AI suggested {suggested}, blocked: {blocked_reason})" \
             if blocked_reason else action
 
+        focus = v["reminder_focus"] if action == "Reminder email" else "none"
+        cap_txt = f"${v['incentive_cap']:,.2f}" if v["incentive_cap"] is not None else "unknown"
         rows.append((c["cart_value"], "| " + " | ".join(_cell(x) for x in [
-            cid, v["session_date"], v["days_since_abandoned"], v["item_count"], f"${c['cart_value']:,.2f}",
-            "Yes" if v["reached_checkout"] else "No", v["device"], v["traffic_medium"],
-            ("Yes (simulated)" if SIMULATED else "No"), "Yes" if v["returning_customer"] else "No",
-            j.get("risk", ""), shown_action, profit_cell]) + " |"))
-        days = v["days_since_abandoned"]
+            cid, v["session_date"], f"Day {v['evaluation_day']}: {v['contact_stage']}", v["item_count"],
+            f"${c['cart_value']:,.2f}", "Yes" if v["high_value"] else "No",
+            "Yes" if v["reached_checkout"] else "No", "Yes" if v["returning_customer"] else "No",
+            f"{v['intent_score']} ({v['intent_band']})", j.get("risk", ""), shown_action, focus,
+            cap_txt, profit_cell]) + " |"))
+        alts = _alternatives(cid, action)
+        checks = (f"Day {v['evaluation_day']} ({v['contact_stage']}); "
+                  f"{'returning customer' if v['returning_customer'] else 'first-time buyer'}; "
+                  f"{'high value' if v['high_value'] else 'regular value'}; incentive cap {cap_txt}; "
+                  f"similar carts bought on their own within 7 days: "
+                  f"{v['natural_return_within_7_days']['customer_type']}")
         cards.append((c["cart_value"], cid, j.get("risk", ""), _cell(j.get("risk_reason", "")),
-                      shown_action, _cell(blocked_reason or j.get("reason", "")), confidence))
-        why.append(f"- **{cid}** ({days} day{'' if days == 1 else 's'} before the end of the data): "
-                   f"{_cell(j.get('risk_reason', ''))} → **{_cell(shown_action)}**: {_cell(j.get('reason', ''))} "
-                   f"Profit: {profit_txt}. Confidence: {confidence}.")
+                      shown_action, _cell(blocked_reason or j.get("reason", "")), confidence,
+                      f"{v['intent_score']} ({v['intent_band']})", focus, checks, alts))
+        why.append(f"- **{cid}**: {_cell(j.get('risk_reason', ''))} → **{_cell(shown_action)}**"
+                   f"{f' ({focus})' if focus != 'none' else ''}: {_cell(j.get('reason', ''))} "
+                   f"Profit: {profit_txt}. Confidence: {confidence}.  \n"
+                   f"  Checks: {_cell(checks)}.  \n  Alternatives: {_cell('; '.join(alts))}.")
 
     if not rows:
         return {"error": f"No valid cart IDs: {skipped}. Use IDs returned by the tools."}
@@ -451,13 +682,16 @@ def submit_review(carts, notes=""):
     cards.sort(key=lambda x: -x[0])
     card_lines = [f"Here are the details and recommendations for your {len(cards)} "
                   f"abandoned cart{'s' if len(cards) != 1 else ''}:", ""]
-    for n, (value, cid, risk, risk_reason, act, reason, conf) in enumerate(cards, start=1):
+    for n, (value, cid, risk, risk_reason, act, reason, conf, intent_txt, focus, checks, alts) in enumerate(cards, 1):
         card_lines += [
             f"{n}. **Cart ID:** {cid}  ",
-            f"   - **Value:** ${value:,.2f}  ",
+            f"   - **Value:** ${value:,.2f}{' (high value)' if value >= HIGH_VALUE else ''}  ",
             f"   - **Risk:** {risk} — {risk_reason}  ",
-            f"   - **Recommendation:** {act}  ",
+            f"   - **Purchase intent:** {intent_txt}  ",
+            f"   - **Recommendation:** {act}{f' ({focus})' if focus != 'none' else ''}  ",
             f"   - **Reason:** {reason}  ",
+            f"   - **Policy checks:** {_cell(checks)}  ",
+            f"   - **Alternatives rejected:** {_cell('; '.join(alts))}  ",
             f"   - **Confidence:** {conf}",
             "",
         ]
@@ -470,9 +704,9 @@ def submit_review(carts, notes=""):
     ]
     cards_md = "\n".join(card_lines)
     report = "\n".join([
-        "| Cart | Session date | Days old | Products | Cart value | Reached checkout | Device | Traffic "
-        "| Subscribed | Returning | Risk | AI recommendation | Profit if recovered |",
-        "|" + " --- |" * 13,
+        "| Cart | Session date | Contact stage | Products | Cart value | High value | Reached checkout "
+        "| Returning | Intent | Risk | AI recommendation | Reminder focus | Incentive cap | Profit if recovered |",
+        "|" + " --- |" * 14,
         *[r[1] for r in rows], "", "**Why**", "", *why, "", "**Summary**", "",
         f"- Carts reviewed: {len(seen)} · Total value at risk: **${total:,.2f}**",
         f"- Profit from carts with a recovery action (Reminder email, Free shipping, 5% discount), "
@@ -484,7 +718,10 @@ def submit_review(carts, notes=""):
         "- Recommended actions: " + ", ".join(f"{a} ({n})" for a, n in actions_count.items()),
         *([f"- {_cell(notes)}"] if notes else []),
         "- Profit if recovered = cart value × 40%, minus the action's cost",
-        f"- Days old are counted from {AS_OF}, the last day of the data",
+        "- Contact stage is a historical replay: each cart is judged on the day set in policies.md "
+        "(Day 1 first reminder, Day 5 second contact, Day 7 closed)",
+        f"- High value = ${HIGH_VALUE:,.2f} or more (top 10% of open carts). Intent score is a heuristic, not a probability",
+        "- Incentive cap = 20% of estimated gross profit (cart value × 40%)",
         *(["- Email subscription is simulated: the data has no consent field"] if SIMULATED else []),
         "- Every recommendation: **Requires Human Approval** (saved to data/recommendations.csv)",
         *([f"- Skipped unknown or repeated IDs: {skipped}"] if skipped else []),
@@ -507,23 +744,25 @@ FUNCTIONS = {
     "submit_recommendations": submit_recommendations,
     "get_store_policies": get_store_policies,
     "calculate_profit": calculate_profit,
+    "plan_incentive_budget": plan_incentive_budget,
     "submit_review": submit_review,
 }
 
 TOOLS = [
     {"type": "function", "function": {
         "name": "list_abandoned_checkouts",
-        "description": "List open abandoned carts: value, number of products, age, device, traffic source, checkout stage and purchase history. No personal data.",
+        "description": "List open abandoned carts: value, high-value flag, contact stage, purchase-intent score, checkout stage, purchase history, incentive cap and natural return rates. No personal data.",
         "parameters": {"type": "object", "properties": {
             "limit": {"type": "integer", "description": "Max carts to return"},
             "min_value": {"type": "number", "description": "Only carts worth at least this much"},
             "max_days_old": {"type": "number", "description": "Only carts within this many days of the end of the data"},
             "reached_checkout_only": {"type": "boolean", "description": "Only carts that reached checkout"},
             "returning_only": {"type": "boolean", "description": "Only returning customers"},
-            "sort_by": {"type": "string", "enum": ["newest", "value"]}}}}},
+            "high_value_only": {"type": "boolean", "description": "Only high-value carts (top 10%)"},
+            "sort_by": {"type": "string", "enum": ["newest", "value", "intent"]}}}}},
     {"type": "function", "function": {
         "name": "summarize_all_carts",
-        "description": "Counts and dollar totals across ALL open carts, grouped by age, checkout stage, device, customer type and cart value.",
+        "description": "Counts and dollar totals across ALL open carts, grouped by age, checkout stage, device, customer type, cart value, intent band and priority, plus natural return rates by segment.",
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "compare_datasets",
@@ -565,7 +804,7 @@ TOOLS = [
             "cart_id": {"type": "string"}}, "required": ["cart_id"]}}},
     {"type": "function", "function": {
         "name": "get_store_policies",
-        "description": "Read the store's discount, shipping and cost policies and estimated purchase rates.",
+        "description": "Read the recovery policies: timing, customer rules, incentive cap, intent score, escalation and costs.",
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "calculate_profit",
@@ -577,6 +816,14 @@ TOOLS = [
             "actions": {"type": "array", "items": {"type": "string", "enum": ACTIONS},
                         "description": "Actions to compare; leave out to compare all"}},
             "required": ["cart_id"]}}},
+    {"type": "function", "function": {
+        "name": "plan_incentive_budget",
+        "description": ("Policy 3.5 demonstration: given a total incentive budget, rank carts eligible for an "
+                        "incentive at the second contact by intent score then value, and pick the cheapest allowed "
+                        "incentive for each until the budget is used. Computed in Python."),
+        "parameters": {"type": "object", "properties": {
+            "budget": {"type": "number", "description": "Total simulated incentive budget in dollars (default from policies.md)"},
+            "max_carts": {"type": "integer", "description": "Most carts to include (default 20)"}}}}},
     {"type": "function", "function": {
         "name": "submit_review",
         "description": ("Finish a cart review. Give ONLY your judgments for each cart. The code adds every "
@@ -590,6 +837,8 @@ TOOLS = [
                 "recommendation": {"type": "string", "enum": ACTIONS,
                                    "description": "Exactly one of the five store actions"},
                 "reason": {"type": "string", "description": "One short sentence: why this action"},
+                "escalation_reason": {"type": "string", "enum": ESCALATION_REASONS,
+                                      "description": "Only when recommending Escalate for human review (policy 3.4)"},
                 "confidence": {"type": "string", "enum": ["Low", "Medium", "High"]}},
                 "required": ["cart_id", "risk", "risk_reason", "recommendation", "reason", "confidence"]}},
             "notes": {"type": "string", "description": "Optional one-line observation for the summary"}},

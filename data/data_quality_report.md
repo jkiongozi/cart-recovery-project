@@ -20,7 +20,7 @@ Built by prepare_data.py from the two Excel files.
 - Traffic source is hidden on many rows ("(data deleted)" or "<Other>"): 2,340
 
 ## Not in either file
-Email address, email consent, product names, fabric, size, quantity, unit price, sale status, shipping and tax.
+Email address, email consent, product names, size, quantity, unit price, sale status, shipping and tax.
 
 ## Limits of purchase history
 previous_orders and lifetime_spend only see inside each file's dates, and a visitor is a browser cookie. A customer on a new device looks new, so returning customers are undercounted.

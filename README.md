@@ -1,6 +1,6 @@
 # Cart Recovery Agent
 
-An AI agent that reviews abandoned carts from the Google Merchandise Store public data and recommends the cheapest action likely to recover each one, or says to leave it alone. It applies the Jb Prints store policies in `prompts/policies.md` to this historical data as a simulation, and can also recommend store-wide ways to reduce abandonment.
+An AI agent that reviews abandoned carts from the Google Merchandise Store public data and recommends the cheapest action likely to recover each one, or says to leave it alone. It applies the recovery policies in `prompts/policies.md` (contact timing, customer rules, an incentive cap, a purchase-intent score and limited escalation) to this historical data as a simulation, and can also recommend store-wide ways to reduce abandonment.
 
 The agent only **recommends**. No email is sent and no customer is contacted.
 
@@ -133,6 +133,15 @@ At `You:`, try:
 
 Type `quit` to stop. Each review is saved to `data/latest_review.md`.
 
+**The full app (recommended):** run `streamlit run agent_app.py` (or double-click `run_agent_app.bat`). It has four tabs:
+
+- **Ask the agent:** chat with example questions in the sidebar. Under each reply: charts of the agent's risk vs. purchase intent and its suggested actions, the full review table, and the data each tool returned.
+- **Cart insights:** carts by purchase intent, how often similar carts came back on their own, cart sizes with the high-value cut-off, which incentive the 20% cap allows, and a filterable cart table.
+- **Budget planner:** move the budget slider to see which carts the policy 3.5 plan would give an incentive, and what it costs.
+- **Policies:** the contact timeline (Day 1, Day 5, Day 7) and the full policy text.
+
+The charts work without an OpenAI key; only the chat needs one.
+
 **Or ask in your browser:** run `streamlit run ask_agent.py` (or double-click `run_ask_agent.bat`). Click an example question in the sidebar or type your own. Each answer shows the data the agent used underneath it: the carts, the summary tables, the 2016-17 vs. 2020-21 comparison, or abandonment by group, with charts. Click **Start a new conversation** to clear it.
 
 | Command | What it does |
@@ -140,6 +149,7 @@ Type `quit` to stop. Each review is saved to `data/latest_review.md`.
 | `python prepare_data.py` | Rebuilds the clean data from the Excel files. Run it again after any change to this file or the Excel files |
 | `python agent.py` | Starts the chat agent |
 | `streamlit run dashboard.py` | Opens the dashboard |
+| `streamlit run agent_app.py` | The full app: chat with the agent plus cart, budget and policy charts |
 | `streamlit run ask_agent.py` | Ask the agent in your browser, with one-click example questions, and see the tables and charts behind each answer |
 | `streamlit run data_viewer.py` | Opens a page for browsing both datasets: filters, charts and the full table |
 | `python risk.py` | Saves the rules baseline to `data/cart_recommendations.csv` |
@@ -223,7 +233,7 @@ Ask `How can I reduce cart abandonment?` and the agent gives 3 to 5 store-wide i
 | Abandonment by device, traffic, visit type, customer type, day, checkout stage, cart value, products and removals | Python (`analyze_abandonment`), across all cart sessions |
 | Choosing the biggest opportunities and writing the ideas | The AI |
 | Adding the evidence figures | Python (`submit_recommendations`), so figures are never typed by the AI |
-| Checks | Python refuses an idea with no real group behind it, or an offer other than the 5% and 10% in the policies |
+| Checks | Python refuses an idea with no real group behind it, or any offer other than the 5% recovery discount |
 
 Pageviews and time on site are left out of this analysis, because buying itself adds pages and minutes. The ideas are untested and show patterns in Google's data, not causes, so the agent never predicts how much abandonment will fall.
 
@@ -234,10 +244,10 @@ Pageviews and time on site are left out of this analysis, because buying itself 
 | Data | `prepare_data.py`, `agent_data.py` | Read the two dataset files, clean them, rebuild purchase history and save the open carts and statistics to `data/`. No decisions |
 | Decide (AI) | `agent.py`, `prompts/cart_recovery_system_prompt.md` | The OpenAI model chooses which tools to call, judges each cart's risk, chooses the action, and writes store-wide recommendations |
 | Facts and rules in code | `agent.py` | Profit math, totals, policy checks, evidence figures and the review table are done in Python, never by the model |
-| Business rules | `prompts/policies.md` | Product cost, discount rules, shipping cost, email cost, purchase-rate estimates and the email simulation setting |
+| Business rules | `prompts/policies.md` | Contact schedule, customer rules, incentive cap, intent-score points, escalation rules, budget, costs, purchase-rate estimates and the simulation settings |
 | Rules baseline | `risk.py` | Plain if-then rules the agent never sees; the dashboard compares the AI's choices with them |
 | View | `dashboard.py`, `data_viewer.py` | Streamlit pages: open carts and AI results, and the full datasets |
-| Checks | `test_agent.py` | Offline tests of the profit math, policies and privacy |
+| Checks | `test_agent.py` | Offline tests of every policy, the profit math and privacy |
 | Queries | `sql/` | The BigQuery queries that produce the dataset files |
 
 **The agent loop** (`run_agent` in `agent.py`): send the conversation to the model, and if it asks for a tool, run that Python function and feed the result back. Repeat until it answers, capped at 25 steps. It calls the OpenAI API directly with `requests`; no agent framework.
@@ -248,17 +258,34 @@ All tools return facts. The model decides what they mean.
 
 | Tool | What it returns |
 | --- | --- |
-| `list_abandoned_checkouts` | Open carts with value, products, age, device, traffic, checkout stage and purchase history |
-| `summarize_all_carts` | Counts and dollar totals across all open carts, grouped by age, stage, device, customer type and value |
+| `list_abandoned_checkouts` | Open carts with value, high-value flag, contact stage, intent score, checkout stage, purchase history, incentive cap and natural return rates |
+| `summarize_all_carts` | Counts and dollar totals across all open carts, grouped by age, stage, device, customer type, value, intent band and priority |
 | `get_checkout`, `get_review_rows` | One cart, or several carts with their exact total |
 | `get_store_policies` | The text of `prompts/policies.md` |
-| `calculate_profit` | For one cart and each of the five actions: whether it is allowed, profit if recovered, and expected profit when the purchase rate is known |
-| `submit_review` | Finishes a cart review: Python adds the facts, profit and totals, applies the policies and records each recommendation |
+| `calculate_profit` | For one cart and each of the five actions: every policy check, whether it is allowed and why not, incentive cost and cap, profit if recovered, and expected profit when the purchase rate is known |
+| `plan_incentive_budget` | Policy 3.5 demo: spends a fixed incentive budget at the second contact, ranked by intent score then value |
+| `submit_review` | Finishes a cart review: Python adds the facts, profit, totals, policy checks and rejected alternatives, applies the policies and records each recommendation |
 | `compare_datasets` | Abandonment, checkout and return rates for both periods |
 | `analyze_abandonment` | Abandonment by group across all cart sessions |
 | `submit_recommendations` | Finishes a store-wide answer: Python adds the evidence and checks the policies |
 
-The five actions are: No action, Reminder email, Free shipping, 5% discount and Escalate for human review. Policies are enforced in code: email actions only for subscribed customers, the 5% discount only for returning customers, and no other discount. A purchase rate typed into `policies.md` is used automatically.
+The five actions are: No action, Reminder email, Free shipping, 5% discount and Escalate for human review. Policies are enforced in code, not left to the model:
+
+| Policy | Enforced how |
+| --- | --- |
+| 2.1 High value | Top 10% of open carts (computed: $108.96 or more). Raises priority only |
+| 2.2 Timing | Historical replay: each cart is judged a set number of days after it was left (default Day 1). Under 24 hours or Day 7 and later: no contact. Day 1 first reminder, Day 5 second contact |
+| 2.3 Customer type | 5% discount only for returning customers; first-time buyers get reminders only |
+| 2.4 Checkout stage | Reminder focus: checkout-completion reminder if the shopper reached checkout, otherwise a basic cart reminder |
+| 2.5 Recovery cost | Reminder first: incentives only at the second contact. The cheaper allowed incentive, and only within 20% of estimated gross profit (cart value × 40%) |
+| 2.6 Category and season | Not applied: the data has no product labels |
+| 3.1 Natural return | Each cart shows how often similar carts were bought within 7 days with no action |
+| 3.2 Intent score | 0 to 100 from checkout, past orders, repeat visit, pageviews, time on site and removals; separate from risk |
+| 3.3 Explainable | Every reviewed cart lists its policy checks and why each alternative was rejected |
+| 3.4 Human review | An escalation must name missing input, policy conflict or exceptional case; high value alone is refused |
+| 3.5 Budget | `plan_incentive_budget` ranks eligible carts under a fixed budget (default $50) |
+
+Change the replay day in `policies.md` (`Evaluate each cart this many days after it was left`) to 5 to see second-contact decisions, or 7 to see closed campaigns. A purchase rate typed into `policies.md` is used automatically.
 
 ### Common problems
 
@@ -275,7 +302,9 @@ The five actions are: No action, Reminder email, Free shipping, 5% discount and 
 | --- | --- |
 | Join 19 sessions split across midnight | They are one visit |
 | Rebuild `previous_orders` and `lifetime_spend` from earlier sessions by the same visitor | The policy needs to know who is a returning customer, and the file has no such field |
-| Remove 3,674 abandoned carts whose visitor bought in a later session | They already came back |
+| Remove 3,674 abandoned carts whose visitor bought in a later session | They already came back (policy 2.2: stop after a verified purchase) |
+| Measure how often abandoned carts were bought within 7 days, by segment | Policy 3.1: natural-return awareness |
+| Work out the top-10% cart value | Policy 2.1: high-value carts |
 | Count ages from August 1, 2017, the last day of the data | Counted from today, every cart would be years old and the answer would always be No action |
 | Drop visitor IDs, state and city | Privacy policy: use only the data needed |
 
@@ -284,8 +313,10 @@ Result: **20,417 open carts worth $992,534.83**, with an average of $48.63 above
 ## Simulated or assumed
 
 - **Email consent is simulated.** The data has no email or consent field. `Assume carts are subscribed to email: yes` in `policies.md` treats every cart as subscribed. Set it to `no` and every email action is blocked, which leaves only No action and Escalate.
-- **Jb Prints numbers are applied to Google's carts.** The 40% margin, $7 shipping and discount rules are your store's, not Google's. Profit figures show what your policies would do on these carts, not what Google earned.
-- **Sale status is unknown.** The rule against discounts on sale items cannot be checked, so any discount carries a note to check first.
+- **Costs are assumptions.** The 40% margin, $7 shipping, 5% discount and 20% incentive cap are simulation assumptions, not Google's figures. Profit figures show what the policies would do on these carts, not what Google earned.
+- **Contact timing is a replay.** The data has no message history, so the replay assumes a first reminder was sent on Day 1 when it judges a cart at Day 5.
+- **The intent score is a heuristic.** Its points are documented in `policies.md`; it is not a calibrated purchase probability.
+- **Natural return is an association.** It shows how often similar carts came back on their own, not that a given shopper would.
 
 ## Data problems
 

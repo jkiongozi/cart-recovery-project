@@ -340,6 +340,58 @@
         }
       }
     },
+    "natural_return": {
+      "window_days": 7,
+      "carts_measured": 23523,
+      "overall_pct": 10.7,
+      "segments": {
+        "customer_type": {
+          "bought before": {
+            "carts": 1004,
+            "came_back_pct": 27.4
+          },
+          "never bought": {
+            "carts": 22519,
+            "came_back_pct": 9.9
+          }
+        },
+        "checkout_stage": {
+          "left before checkout": {
+            "carts": 18472,
+            "came_back_pct": 9.7
+          },
+          "reached checkout": {
+            "carts": 5051,
+            "came_back_pct": 14.3
+          }
+        },
+        "visit_type": {
+          "first visit": {
+            "carts": 13123,
+            "came_back_pct": 7.1
+          },
+          "repeat visit": {
+            "carts": 10400,
+            "came_back_pct": 15.2
+          }
+        },
+        "device": {
+          "desktop": {
+            "carts": 18976,
+            "came_back_pct": 12.3
+          },
+          "mobile": {
+            "carts": 3952,
+            "came_back_pct": 3.5
+          },
+          "tablet": {
+            "carts": 595,
+            "came_back_pct": 4.5
+          }
+        }
+      }
+    },
+    "high_value_threshold": 108.96,
     "as_of_date": "2017-08-01",
     "abandoned_but_bought_in_a_later_session": 3674,
     "open_carts_for_review": 20417
@@ -566,4 +618,4 @@
       }
     }
   }
-}
+}

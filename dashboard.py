@@ -31,7 +31,7 @@ df_all, stats = load_data()
 
 st.title("🛒 Cart Recovery — Abandoned Carts")
 ua, ga4 = stats["2016-17"], stats["2020-21"]
-st.caption(f"Google Merchandise Store, US, {ua['period']}, with Jb Prints policies applied as a simulation. "
+st.caption(f"Google Merchandise Store, US, {ua['period']}, with the recovery policies applied as a simulation. "
            f"Ages are counted from {ua['as_of_date']}. Email subscription is simulated.")
 
 if df_all.empty:

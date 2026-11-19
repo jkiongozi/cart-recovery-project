@@ -101,6 +101,31 @@ def _return_rate(df, days):
             "rate_pct": round(came_back / len(eligible) * 100, 1) if len(eligible) else None}
 
 
+CAMPAIGN_DAYS = 7     # policy 2.2: the recovery campaign closes on Day 7
+HIGH_VALUE_PCT = 90   # policy 2.1: the top 10% of open cart values count as high value
+
+
+def _natural_return(df):
+    """Policy 3.1: how often abandoned carts were bought later with no recovery action, by segment.
+    Uses the campaign window (7 days). Carts too close to the end of the data are left out."""
+    last_day = df["date"].max()
+    ab = df[(df["abandoned"] == 1) & (df["date"] <= last_day - pd.Timedelta(days=CAMPAIGN_DAYS))].copy()
+    gap = (ab["next_purchase_date"] - ab["date"]).dt.days
+    ab["came_back"] = (gap <= CAMPAIGN_DAYS).astype(int)
+    segments = {
+        "customer_type": ab["previous_orders"].map(lambda n: "bought before" if n > 0 else "never bought"),
+        "checkout_stage": ab["reached_checkout"].map({1: "reached checkout", 0: "left before checkout"}),
+        "visit_type": ab["visit_number"].map(lambda n: "first visit" if n == 1 else "repeat visit"),
+        "device": ab["device_category"],
+    }
+    out = {"window_days": CAMPAIGN_DAYS, "carts_measured": len(ab),
+           "overall_pct": round(ab["came_back"].mean() * 100, 1), "segments": {}}
+    for name, keys in segments.items():
+        out["segments"][name] = {str(k): {"carts": len(g), "came_back_pct": round(g["came_back"].mean() * 100, 1)}
+                                 for k, g in ab.groupby(keys.values) if len(g) >= MIN_SESSIONS}
+    return out
+
+
 def _stats(df, label, value_reliable):
     ab = df["abandoned"] == 1
     device = df.groupby("device_category")["abandoned"].agg(["size", "mean"])
@@ -205,6 +230,8 @@ def build():
             "traffic_medium", "pageviews", "time_on_site", "visit_number",
             "previous_orders", "lifetime_spend"]
     carts = carts[keep].sort_values("created_at", ascending=False)
+    stats["2016-17"]["natural_return"] = _natural_return(ua)
+    stats["2016-17"]["high_value_threshold"] = round(float(carts["cart_value"].quantile(HIGH_VALUE_PCT / 100)), 2)
     stats["2016-17"].update({"as_of_date": str(as_of.date()),
                              "abandoned_but_bought_in_a_later_session": int(returned.sum()),
                              "open_carts_for_review": len(carts)})
@@ -239,7 +266,7 @@ Built by prepare_data.py from the two Excel files.
 - Traffic source is hidden on many rows ("(data deleted)" or "<Other>"): {int(ga4_raw['traffic_source'].isin(['(data deleted)', '<Other>']).sum()):,}
 
 ## Not in either file
-Email address, email consent, product names, fabric, size, quantity, unit price, sale status, shipping and tax.
+Email address, email consent, product names, size, quantity, unit price, sale status, shipping and tax.
 
 ## Limits of purchase history
 previous_orders and lifetime_spend only see inside each file's dates, and a visitor is a browser cookie. A customer on a new device looks new, so returning customers are undercounted.
@@ -254,7 +281,7 @@ def load_carts():
     stale = not (os.path.exists(CARTS_CSV) and os.path.exists(STATS_JSON))
     if not stale:
         with open(STATS_JSON, encoding="utf-8") as f:
-            stale = "patterns" not in json.load(f)["2016-17"]   # built by an older version
+            stale = "natural_return" not in json.load(f)["2016-17"]   # built by an older version
     if stale:
         build()
     carts = pd.read_csv(CARTS_CSV, keep_default_na=False, na_values=[""],

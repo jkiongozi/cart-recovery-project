@@ -25,6 +25,7 @@ EXAMPLES = [
     "Summarize all my carts",
     "How does 2016-17 compare with 2020-21?",
     "How can I reduce cart abandonment?",
+    "How should I spend a $50 incentive budget?",
 ]
 GROUP_NAMES = {"by_age": "By age", "by_stage": "By checkout stage", "by_device": "By device",
                "by_customer": "By customer type", "by_cart_value": "By cart value"}
@@ -119,6 +120,11 @@ def show_tool(name, args, result, turn):
         show_compare(result)
     elif name == "analyze_abandonment":
         show_patterns(result)
+    elif name == "plan_incentive_budget":
+        st.caption(f"Budget ${result['budget']:,.2f} · spent if all recovered ${result['spent_if_all_recovered']:,.2f} · "
+                   f"{result['carts_chosen']} of {result['carts_eligible_for_an_incentive']:,} eligible carts · "
+                   f"judged at Day {result['evaluated_at_day']}. {result['note']}")
+        _table(result["plan"])
     elif name == "get_store_policies":
         st.markdown(result["policies"])
     elif name == "submit_review" and turn.get("full_review"):
@@ -129,8 +135,10 @@ TITLES = {"list_abandoned_checkouts": "Carts found", "get_review_rows": "Carts r
           "get_checkout": "Cart details", "calculate_profit": "Profit by action",
           "summarize_all_carts": "Summary of all open carts", "compare_datasets": "2016-17 vs. 2020-21",
           "analyze_abandonment": "Abandonment by group", "get_store_policies": "Store policies used",
+          "plan_incentive_budget": "Incentive budget plan",
           "submit_review": "Full review table"}
-OPEN_BY_DEFAULT = {"summarize_all_carts", "compare_datasets", "analyze_abandonment", "submit_review"}
+OPEN_BY_DEFAULT = {"summarize_all_carts", "compare_datasets", "analyze_abandonment", "submit_review",
+                   "plan_incentive_budget"}
 
 
 def show_turn(turn):
