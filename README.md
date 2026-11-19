@@ -149,6 +149,7 @@ The charts work without an OpenAI key; only the chat needs one.
 | `python prepare_data.py` | Rebuilds the clean data from the Excel files. Run it again after any change to this file or the Excel files |
 | `python agent.py` | Starts the chat agent |
 | `python agent2.py` | Starts the same agent with no policies, to compare how the AI behaves without rules |
+| `streamlit run ask_agent2.py` | Agent 2 in your browser: chat, charts of its results, and a side-by-side comparison with `agent.py` |
 | `streamlit run dashboard.py` | Opens the dashboard |
 | `streamlit run agent_app.py` | The full app: chat with the agent plus cart, budget and policy charts |
 | `streamlit run ask_agent.py` | Ask the agent in your browser, with one-click example questions, and see the tables and charts behind each answer |
@@ -272,6 +273,20 @@ Results are saved to separate files, so the main agent's results are never overw
 | `data/agent2_latest_recommendations.md` | The latest store-wide ideas |
 | `data/agent2_recommendations.csv` | Every cart recommendation, with offer cost and policy check |
 
+### View agent 2's results in your browser
+
+```powershell
+streamlit run ask_agent2.py
+```
+
+Or double-click `run_ask_agent2.bat`. The page has three tabs:
+
+- **Ask agent 2:** chat with example questions in the sidebar. Under each review: charts of the offers the AI chose, how many would break a policy, which policies, the discount sizes against the 5% limit, and what each offer would cost.
+- **All saved results:** totals and the same charts across every cart agent 2 has reviewed, plus the full table and its latest store-wide ideas.
+- **Compare with agent.py:** for carts both agents reviewed, what each one recommended, side by side. Ask both agents the same question first, for example `Review my 5 highest-value carts`.
+
+The two results tabs work without an OpenAI key; only the chat needs one.
+
 Nothing is sent and no customer is contacted.
 
 ## How the project is built
@@ -282,7 +297,7 @@ Nothing is sent and no customer is contacted.
 | Decide (AI) | `agent.py`, `prompts/cart_recovery_system_prompt.md` | The OpenAI model chooses which tools to call, judges each cart's risk, chooses the action, and writes store-wide recommendations |
 | Facts and rules in code | `agent.py` | Profit math, totals, policy checks, evidence figures and the review table are done in Python, never by the model |
 | Business rules | `prompts/policies.md` | Contact schedule, customer rules, incentive cap, intent-score points, escalation rules, budget, costs, purchase-rate estimates and the simulation settings |
-| No-policy comparison | `agent2.py` | The same AI and carts with no policies; Python adds a policy check afterwards for comparison only |
+| No-policy comparison | `agent2.py`, `ask_agent2.py` | The same AI and carts with no policies; Python adds a policy check afterwards for comparison only |
 | Rules baseline | `risk.py` | Plain if-then rules the agent never sees; the dashboard compares the AI's choices with them |
 | View | `dashboard.py`, `data_viewer.py` | Streamlit pages: open carts and AI results, and the full datasets |
 | Checks | `test_agent.py` | Offline tests of every policy, the profit math and privacy |
