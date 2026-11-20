@@ -1,0 +1,17 @@
+# Cart review without policies
+
+*2026-11-19 17:59* · **You asked:** Review my 5 highest-value carts
+
+**AI review without policies: 5 carts worth $11,796.16**
+
+| Cart | Value | AI's action | Offer | When | Why | Expected outcome | Confidence | Offer cost | Policy check (not enforced) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UA-09912 | $2,801.95 | Send a follow-up email to this customer offering 15% off their cart value. | 15% discount | Day 0 | The customer hasn't completed their purchase after a significant amount of time (271 days), suggesting potential high interest but hesitance to buy. Offering a discount may encourage them to finalize the purchase. | Increase conversion of the abandoned cart and regain a high-value customer. | High | $420.29 | Breaks 2.2: no contact in the first 24 hours; 2.3: the most allowed is a 5% discount; 2.3: first-time buyers get no discount; 2.5: incentives only from the second contact (Day 5); 2.5: costs $420.29, above the $224.16 cap |
+| UA-15598 | $2,519.72 | Send a reminder email with a 10% discount to encourage the customer to finalize their order. | 10% discount | Day 0 | The cart contains one high-value item but was abandoned 215 days ago. The reminder with a discount can rekindle interest given this long gap. | Prompt the customer to reconsider their decision and complete the purchase. | Medium | $251.97 | Breaks 2.2: no contact in the first 24 hours; 2.3: the most allowed is a 5% discount; 2.3: first-time buyers get no discount; 2.5: incentives only from the second contact (Day 5); 2.5: costs $251.97, above the $201.58 cap |
+| UA-16971 | $2,346.87 | Contact the customer and offer 20% off their cart value, as it has a large number of items. | 20% discount | Day 0 | The cart has a high total value (2346.87) and contains multiple items. Reviving their interest with a larger discount could encourage them to finalize their purchase. | High likelihood of conversion due to high value and size of the cart. | High | $469.37 | Breaks 2.2: no contact in the first 24 hours; 2.3: the most allowed is a 5% discount; 2.3: first-time buyers get no discount; 2.5: incentives only from the second contact (Day 5); 2.5: costs $469.37, above the $187.75 cap |
+| UA-27286 | $2,127.62 | Send a short reminder email about the cart with a 5% discount to motivate the customer. | 5% discount | Day 0 | The customer has shown engagement during their session (impressive time on site), and a small nudge may help them complete their purchase. | Increase the chances of conversion with a small incentive and reminder. | Medium | $106.38 | Breaks 2.2: no contact in the first 24 hours; 2.3: first-time buyers get no discount; 2.5: incentives only from the second contact (Day 5) |
+| UA-22067 | $2,000.00 | Send a reminder email offering 10% off their cart. | 10% discount | Day 0 | As a recent abandonment (128 days ago), a reminder along with a discount could help convert this cart, especially given its single high-value item. | Encourage customer to complete the purchase with a reminder and incentive. | Medium | $200.00 | Breaks 2.2: no contact in the first 24 hours; 2.3: the most allowed is a 5% discount; 2.3: first-time buyers get no discount; 2.5: incentives only from the second contact (Day 5); 2.5: costs $200.00, above the $160.00 cap |
+
+- Total cost of the AI's offers if every cart is recovered: $1,448.01
+- 5 of 5 choices would break the store policies used by agent.py.
+- Nothing was sent. The policy check was added by Python after the AI decided; the AI never saw it.
